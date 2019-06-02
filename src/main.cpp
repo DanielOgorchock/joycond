@@ -13,9 +13,11 @@ std::map<std::string, phys_ctlr *> pairing_ctlrs;
 void add_new_ctlr(struct udev_device *dev)
 {
     std::string devpath = udev_device_get_devpath(dev);
+    std::string devname = udev_device_get_devnode(dev);
 
     if (!pairing_ctlrs.count(devpath)) {
-        auto phys = new phys_ctlr(devpath);
+        auto phys = new phys_ctlr(devpath, devname);
+        std::cout << "Creating new phys_ctlr for " << devname << std::endl;
         pairing_ctlrs[devpath] = phys;
     }
 }

@@ -1,7 +1,11 @@
 #include "phys_ctlr.h"
 
+#include <fcntl.h>
 #include <iostream>
 #include <glob.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 //private
 std::optional<std::string> phys_ctlr::get_first_glob_path(std::string const &pattern)
@@ -71,15 +75,36 @@ void phys_ctlr::init_leds()
 }
 
 //public
-phys_ctlr::phys_ctlr(std::string const &devpath) :
-    devpath(devpath)
-
+phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
+    evdev(nullptr),
+    devpath(devpath),
+    devname(devname)
 {
     init_leds();
+
+    int fd = open(devname.c_str(), O_RDWR);
+    if (fd < 0) {
+        std::cerr << "Failed to open " << devname << " ; errno=" << errno << std::endl;
+        exit(1);
+    }
+    if (libevdev_new_from_fd(fd, &evdev)) {
+        std::cerr << "Failed to create evdev from fd\n";
+        exit(1);
+    }
+
+    if (libevdev_grab(evdev, LIBEVDEV_GRAB)) {
+        std::cerr << "Failed to grab the evdev\n";
+        exit(1);
+    }
 }
 
 phys_ctlr::~phys_ctlr()
 {
+    if (evdev) {
+        int fd = libevdev_get_fd(evdev);
+        libevdev_free(evdev);
+        close(fd);
+    }
 }
 
 bool phys_ctlr::set_player_led(int index, bool on)
