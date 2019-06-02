@@ -89,6 +89,7 @@ bool phys_ctlr::set_player_led(int index, bool on)
         return false;
 
     player_leds[index] << on ? '1' : '0';
+    player_leds[index].flush();
     return true;
 }
 
@@ -107,6 +108,7 @@ bool phys_ctlr::set_home_led(unsigned short brightness)
         return false;
 
     home_led << brightness;
+    home_led.flush();
     return true;
 }
 

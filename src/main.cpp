@@ -1,3 +1,5 @@
+#include <map>
+#include <chrono>
 #include <iostream>
 #include <libudev.h>
 #include <sys/epoll.h>
@@ -14,6 +16,8 @@ int main(int argc, char *argv[])
     int epoll_fd;
     struct epoll_event udev_mon_event;
     struct epoll_event events[MAX_EVENTS];
+    std::map<std::string, phys_ctlr *> pairing_ctlrs;
+    bool pairing_leds_on = false;
 
     udev = udev_new();
     if (!udev) {
@@ -42,7 +46,7 @@ int main(int argc, char *argv[])
     while (true) {
         int nfds;
 
-        nfds = epoll_pwait(epoll_fd, events, MAX_EVENTS, -1, nullptr);
+        nfds = epoll_pwait(epoll_fd, events, MAX_EVENTS, 500, nullptr);
         if (nfds == -1) {
             std::cerr << "epoll_pwait failure\n";
             return 1;
@@ -54,22 +58,30 @@ int main(int argc, char *argv[])
 
                 dev = udev_monitor_receive_device(mon);
                 if (dev) {
+                    char const *action = udev_device_get_action(dev);
+                    std::string devpath = udev_device_get_devpath(dev);
+
                     std::cout << "DEVNAME="    << udev_device_get_sysname(dev);
                     std::cout << " ACTION="    << udev_device_get_action(dev);
                     std::cout << " DEVPATH="   << udev_device_get_devpath(dev);
                     std::cout << std::endl;
 
-                    if (std::string("add") == udev_device_get_action(dev)) {
-                        phys_ctlr test { udev_device_get_devpath(dev) };
-
-                        test.set_home_led(12);
-                        test.set_player_led(0, true);
-                        test.set_player_led(1, false);
-                        test.set_player_led(2, false);
-                        test.set_player_led(3, true);
+                    if (std::string("add") == action) {
+                        pairing_ctlrs[devpath] = new phys_ctlr(devpath);
+                    } else if (std::string("remove") == action) {
+                        if (pairing_ctlrs.count(devpath)) {
+                            delete pairing_ctlrs[devpath];
+                            pairing_ctlrs.erase(devpath);
+                        }
                     }
                 }
             }
+        }
+
+        for (auto& kv : pairing_ctlrs) {
+            if (!kv.second->set_all_player_leds(pairing_leds_on))
+                std::cerr << "Failed to set player LEDS\n";
+            pairing_leds_on = !pairing_leds_on;
         }
     }
 
