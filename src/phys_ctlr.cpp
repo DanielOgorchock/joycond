@@ -12,7 +12,6 @@ std::optional<std::string> phys_ctlr::get_first_glob_path(std::string const &pat
     if (globbuf.gl_pathc) {
         std::string match(globbuf.gl_pathv[0]);
         globfree(&globbuf);
-        std::cout << "match = " << match << std::endl;
         return { match };
     }
 

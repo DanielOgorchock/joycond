@@ -81,8 +81,8 @@ int main(int argc, char *argv[])
         for (auto& kv : pairing_ctlrs) {
             if (!kv.second->set_all_player_leds(pairing_leds_on))
                 std::cerr << "Failed to set player LEDS\n";
-            pairing_leds_on = !pairing_leds_on;
         }
+        pairing_leds_on = !pairing_leds_on;
     }
 
     return 0;
