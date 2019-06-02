@@ -8,6 +8,75 @@
 
 const int MAX_EVENTS = 10;
 
+std::map<std::string, phys_ctlr *> pairing_ctlrs;
+
+void add_new_ctlr(struct udev_device *dev)
+{
+    std::string devpath = udev_device_get_devpath(dev);
+
+    if (!pairing_ctlrs.count(devpath)) {
+        auto phys = new phys_ctlr(devpath);
+        pairing_ctlrs[devpath] = phys;
+    }
+}
+
+int init_pairing_ctlrs(struct udev *udev)
+{
+    struct udev_enumerate *enumerate;
+    struct udev_list_entry *devlist;
+    struct udev_list_entry *deventry;
+
+    enumerate = udev_enumerate_new(udev);
+    if (!enumerate) {
+        std::cerr << "Failed to create new udev enumeration\n";
+        return 1;
+    }
+    udev_enumerate_add_match_tag(enumerate, "joycond");
+    udev_enumerate_scan_devices(enumerate);
+    devlist = udev_enumerate_get_list_entry(enumerate);
+    if (!devlist) {
+        std::cerr << "Failed to get udev enumeration list\n";
+        return 1;
+    }
+
+    udev_list_entry_foreach(deventry, devlist) {
+        char const *path = udev_list_entry_get_name(deventry);
+        struct udev_device *dev = udev_device_new_from_syspath(udev, path);
+        std::string devpath = udev_device_get_devpath(dev);
+
+        add_new_ctlr(dev);
+        udev_device_unref(dev);
+    }
+
+    udev_enumerate_unref(enumerate);
+    return 0;
+}
+
+void udev_event_handler(struct udev_monitor *mon)
+{
+    struct udev_device *dev;
+
+    dev = udev_monitor_receive_device(mon);
+    if (dev) {
+        std::string action = udev_device_get_action(dev);
+        std::string devpath = udev_device_get_devpath(dev);
+
+        std::cout << "DEVNAME="    << udev_device_get_sysname(dev);
+        std::cout << " ACTION="    << udev_device_get_action(dev);
+        std::cout << " DEVPATH="   << udev_device_get_devpath(dev);
+        std::cout << std::endl;
+
+        if (std::string("add") == action && !pairing_ctlrs.count(devpath)) {
+            add_new_ctlr(dev);
+        } else if (std::string("remove") == action) {
+            if (pairing_ctlrs.count(devpath)) {
+                delete pairing_ctlrs[devpath];
+                pairing_ctlrs.erase(devpath);
+            }
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     struct udev *udev;
@@ -16,7 +85,6 @@ int main(int argc, char *argv[])
     int epoll_fd;
     struct epoll_event udev_mon_event;
     struct epoll_event events[MAX_EVENTS];
-    std::map<std::string, phys_ctlr *> pairing_ctlrs;
     bool pairing_leds_on = false;
 
     udev = udev_new();
@@ -26,9 +94,18 @@ int main(int argc, char *argv[])
     }
 
     mon = udev_monitor_new_from_netlink(udev, "udev");
+    if (!mon) {
+        std::cerr << "Failed to create udev monitor\n";
+        return 1;
+    }
     udev_monitor_filter_add_match_tag(mon, "joycond");
     udev_monitor_enable_receiving(mon);
     udev_mon_fd = udev_monitor_get_fd(mon);
+
+    if (init_pairing_ctlrs(udev)) {
+        std::cerr << "Failed to init pairing controllers list\n";
+        return 1;
+    }
 
     epoll_fd = epoll_create1(0);
     if (epoll_fd < 0) {
@@ -54,27 +131,7 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < nfds; ++i) {
             if (events[i].data.fd == udev_mon_fd) {
-                struct udev_device *dev;
-
-                dev = udev_monitor_receive_device(mon);
-                if (dev) {
-                    char const *action = udev_device_get_action(dev);
-                    std::string devpath = udev_device_get_devpath(dev);
-
-                    std::cout << "DEVNAME="    << udev_device_get_sysname(dev);
-                    std::cout << " ACTION="    << udev_device_get_action(dev);
-                    std::cout << " DEVPATH="   << udev_device_get_devpath(dev);
-                    std::cout << std::endl;
-
-                    if (std::string("add") == action) {
-                        pairing_ctlrs[devpath] = new phys_ctlr(devpath);
-                    } else if (std::string("remove") == action) {
-                        if (pairing_ctlrs.count(devpath)) {
-                            delete pairing_ctlrs[devpath];
-                            pairing_ctlrs.erase(devpath);
-                        }
-                    }
-                }
+                udev_event_handler(mon);
             }
         }
 
@@ -85,5 +142,7 @@ int main(int argc, char *argv[])
         pairing_leds_on = !pairing_leds_on;
     }
 
+    udev_monitor_unref(mon);
+    udev_unref(udev);
     return 0;
 }

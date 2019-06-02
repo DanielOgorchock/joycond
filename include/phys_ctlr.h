@@ -20,6 +20,7 @@ class phys_ctlr
         phys_ctlr(std::string const &devpath);
         ~phys_ctlr();
 
+        std::string const &get_devpath() const { return devpath; }
         bool set_player_led(int index, bool on);
         bool set_all_player_leds(bool on);
         bool set_home_led(unsigned short brightness);
