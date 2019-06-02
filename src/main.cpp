@@ -2,6 +2,8 @@
 #include <libudev.h>
 #include <sys/epoll.h>
 
+#include "phys_ctlr.h"
+
 const int MAX_EVENTS = 10;
 
 int main(int argc, char *argv[])
@@ -48,16 +50,25 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < nfds; ++i) {
             if (events[i].data.fd == udev_mon_fd) {
-            struct udev_device *dev;
+                struct udev_device *dev;
 
-            dev = udev_monitor_receive_device(mon);
-            if (dev) {
-                std::cout << "ACTION="      << udev_device_get_action(dev);
-                std::cout << " DEVNAME="    << udev_device_get_sysname(dev);
-                std::cout << " DEVPATH="    << udev_device_get_devpath(dev);
-                std::cout << std::endl;
-            }
+                dev = udev_monitor_receive_device(mon);
+                if (dev) {
+                    std::cout << "DEVNAME="    << udev_device_get_sysname(dev);
+                    std::cout << " ACTION="    << udev_device_get_action(dev);
+                    std::cout << " DEVPATH="   << udev_device_get_devpath(dev);
+                    std::cout << std::endl;
 
+                    if (std::string("add") == udev_device_get_action(dev)) {
+                        phys_ctlr test { udev_device_get_devpath(dev) };
+
+                        test.set_home_led(12);
+                        test.set_player_led(0, true);
+                        test.set_player_led(1, false);
+                        test.set_player_led(2, false);
+                        test.set_player_led(3, true);
+                    }
+                }
             }
         }
     }
