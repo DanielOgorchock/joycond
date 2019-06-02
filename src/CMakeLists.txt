@@ -1,6 +1,6 @@
 target_sources(
     joycond
     PRIVATE
-        main.c
+        main.cpp
     )
 
