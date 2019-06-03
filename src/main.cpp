@@ -7,10 +7,13 @@
 
 #include "phys_ctlr.h"
 #include "virt_ctlr_passthrough.h"
+#include "virt_ctlr_combined.h"
 
 const int MAX_EVENTS = 10;
 
 std::map<std::string, phys_ctlr *> pairing_ctlrs;
+struct phys_ctlr *left = nullptr;
+struct phys_ctlr *right = nullptr;
 std::vector<virt_ctlr *> active_ctlrs;
 
 void add_new_ctlr(struct udev_device *dev, int epoll_fd)
@@ -72,6 +75,10 @@ void remove_ctlr(std::string const &devpath, int epoll_fd)
             std::cerr << "Failed to remove ctlr_event to epoll; errno=" << errno << std::endl;
             exit(1);
         }
+        if (left == pairing_ctlrs[devpath])
+            left = nullptr;
+        else if (right == pairing_ctlrs[devpath])
+            right = nullptr;
         delete pairing_ctlrs[devpath];
         pairing_ctlrs.erase(devpath);
     } else {
@@ -91,6 +98,7 @@ void remove_ctlr(std::string const &devpath, int epoll_fd)
                         phys->grab();
                         phys->set_all_player_leds(false);
                         pairing_ctlrs[phys->get_devpath()] = phys;
+                        phys->zero_triggers();
                     }
                 }
                 delete virt;
@@ -123,24 +131,55 @@ void udev_event_handler(struct udev_monitor *mon, int epoll_fd)
     }
 }
 
-void add_passthrough_ctlr(phys_ctlr *phys)
+void add_combined_ctlr(phys_ctlr *physl, phys_ctlr *physr)
 {
-    struct virt_ctlr_passthrough *passthrough;
+    struct virt_ctlr_combined *combined;
 
-    passthrough = new virt_ctlr_passthrough(phys);
-    phys->set_all_player_leds(false);
+    std::cout << "Creating combined joy-con input\n";
+    combined = new virt_ctlr_combined(physl, physr);
 
     bool found_slot = false;
     for (int i = 0; i < active_ctlrs.size(); i++) {
         if (!active_ctlrs[i]) {
             found_slot = true;
-            phys->set_player_led(i % 4, true);
+            physl->set_player_leds_to_player(i % 4 + 1);
+            physr->set_player_leds_to_player(i % 4 + 1);
+            active_ctlrs[i] = combined;
+            break;
+        }
+    }
+    if (!found_slot) {
+        physl->set_player_leds_to_player(active_ctlrs.size() % 4 + 1);
+        physr->set_player_leds_to_player(active_ctlrs.size() % 4 + 1);
+        active_ctlrs.push_back(combined);
+    }
+
+    pairing_ctlrs.erase(physl->get_devpath());
+    pairing_ctlrs.erase(physr->get_devpath());
+}
+
+void add_passthrough_ctlr(phys_ctlr *phys)
+{
+    struct virt_ctlr_passthrough *passthrough;
+
+    passthrough = new virt_ctlr_passthrough(phys);
+
+    if (left == phys)
+        left = nullptr;
+    if (right == phys)
+        right = nullptr;
+
+    bool found_slot = false;
+    for (int i = 0; i < active_ctlrs.size(); i++) {
+        if (!active_ctlrs[i]) {
+            found_slot = true;
+            phys->set_player_leds_to_player(i % 4 + 1);
             active_ctlrs[i] = passthrough;
             break;
         }
     }
     if (!found_slot) {
-        phys->set_player_led(active_ctlrs.size() % 4, true);
+        phys->set_player_leds_to_player(active_ctlrs.size() % 4 + 1);
         active_ctlrs.push_back(passthrough);
     }
 
@@ -160,11 +199,32 @@ void ctlr_event_handler(int event_fd, int epoll_fd)
                     break;
                 case phys_ctlr::PairingState::Waiting:
                     std::cout << "Waiting controller needs partner\n";
+                    if (ctlr->get_model() == phys_ctlr::Model::Left_Joycon) {
+                        if (!left) {
+                            left = ctlr;
+                            std::cout << "Found left\n";
+                        }
+                    } else {
+                        if (!right) {
+                            right = ctlr;
+                            std::cout << "Found right\n";
+                        }
+                    }
+                    if (left && right) {
+                        add_combined_ctlr(left, right);
+                        left = nullptr;
+                        right = nullptr;
+                    }
                     break;
                 case phys_ctlr::PairingState::Horizontal:
                     std::cout << "Joy-Con paired in horizontal mode\n";
                     add_passthrough_ctlr(ctlr);
+                    break;
                 default:
+                    if (left == ctlr)
+                        left = nullptr;
+                    if (right == ctlr)
+                        right = nullptr;
                     break;
             }
             break;

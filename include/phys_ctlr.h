@@ -33,6 +33,7 @@ class phys_ctlr
         std::string const &get_devpath() const { return devpath; }
         bool set_player_led(int index, bool on);
         bool set_all_player_leds(bool on);
+        bool set_player_leds_to_player(int player);
         bool set_home_led(unsigned short brightness);
         int get_fd();
         void handle_events();
@@ -40,6 +41,8 @@ class phys_ctlr
         enum PairingState get_pairing_state() const;
         void grab() { libevdev_grab(evdev, LIBEVDEV_GRAB); }
         void ungrab() { libevdev_grab(evdev, LIBEVDEV_UNGRAB); }
+        struct libevdev *get_evdev() { return evdev; }
+        void zero_triggers();
 };
 
 #endif

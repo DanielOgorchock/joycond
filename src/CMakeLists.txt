@@ -5,5 +5,6 @@ target_sources(
         phys_ctlr.cpp
         virt_ctlr.cpp
         virt_ctlr_passthrough.cpp
+        virt_ctlr_combined.cpp
     )
 

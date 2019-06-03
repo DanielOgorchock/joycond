@@ -210,6 +210,19 @@ bool phys_ctlr::set_all_player_leds(bool on)
     return true;
 }
 
+bool phys_ctlr::set_player_leds_to_player(int player)
+{
+    if (player < 1 || player > 4) {
+        std::cerr << player << " is not a valid player led value\n";
+        return false;
+    }
+
+    set_all_player_leds(false);
+    for (int i = 0; i < player; i++) {
+        set_player_led(i, true);
+    }
+}
+
 bool phys_ctlr::set_home_led(unsigned short brightness)
 {
     if (brightness > 15 || !home_led.is_open())
@@ -258,12 +271,16 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
                 state = PairingState::Waiting;
             else if (sl && sr)
                 state = PairingState::Horizontal;
+            else if (l && zl)
+                state = PairingState::Lone;
             break;
         case Model::Right_Joycon:
             if (r ^ zr)
                 state = PairingState::Waiting;
             else if (sl && sr)
                 state = PairingState::Horizontal;
+            else if (r && zr)
+                state = PairingState::Lone;
             break;
         default:
             break;
@@ -271,3 +288,7 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
     return state;
 }
 
+void phys_ctlr::zero_triggers()
+{
+    l = zl = r = zr = sl = sr = 0;
+}

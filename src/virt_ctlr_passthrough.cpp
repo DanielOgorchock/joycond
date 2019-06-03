@@ -18,7 +18,6 @@ virt_ctlr_passthrough::~virt_ctlr_passthrough()
 
 void virt_ctlr_passthrough::handle_events()
 {
-    // keep track of the triggers' states
     phys->handle_events();
 }
 
