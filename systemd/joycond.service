@@ -1,0 +1,15 @@
+[Unit]
+Description=joycond
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/joycond
+WorkingDirectory=/root
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
+
