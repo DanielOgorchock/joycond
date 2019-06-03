@@ -215,10 +215,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    auto last_blink_millis = std::chrono::system_clock::now();
     while (true) {
         int nfds;
 
-        nfds = epoll_pwait(epoll_fd, events, MAX_EVENTS, 500, nullptr);
+        nfds = epoll_pwait(epoll_fd, events, MAX_EVENTS, 50, nullptr);
         if (nfds == -1) {
             std::cerr << "epoll_pwait failure\n";
             return 1;
@@ -232,11 +233,16 @@ int main(int argc, char *argv[])
             }
         }
 
-        for (auto& kv : pairing_ctlrs) {
-            if (!kv.second->set_all_player_leds(pairing_leds_on))
-                std::cerr << "Failed to set player LEDS\n";
+        using namespace std::chrono_literals;
+        auto current_millis = std::chrono::system_clock::now();
+        if (current_millis - last_blink_millis >= 500ms) {
+            for (auto& kv : pairing_ctlrs) {
+                if (!kv.second->set_all_player_leds(pairing_leds_on))
+                    std::cerr << "Failed to set player LEDS\n";
+            }
+            last_blink_millis = current_millis;
+            pairing_leds_on = !pairing_leds_on;
         }
-        pairing_leds_on = !pairing_leds_on;
     }
 
     udev_monitor_unref(mon);
