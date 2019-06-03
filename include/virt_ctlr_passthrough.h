@@ -16,6 +16,7 @@ class virt_ctlr_passthrough : public virt_ctlr
         virtual void handle_events();
         virtual bool contains_phys_ctlr(phys_ctlr const *ctlr) const;
         virtual bool contains_phys_ctlr(char const *devpath) const;
+        virtual bool contains_fd(int fd) const;
         virtual std::vector<phys_ctlr *> get_phys_ctlrs();
 };
 

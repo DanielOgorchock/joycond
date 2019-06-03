@@ -170,6 +170,13 @@ void ctlr_event_handler(int event_fd, int epoll_fd)
             break;
         }
     }
+
+    for (auto& ctlr : active_ctlrs) {
+        if (!ctlr)
+            continue;
+        if (ctlr->contains_fd(event_fd))
+            ctlr->handle_events();
+    }
 }
 
 int main(int argc, char *argv[])

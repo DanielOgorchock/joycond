@@ -32,6 +32,11 @@ bool virt_ctlr_passthrough::contains_phys_ctlr(char const *devpath) const
     return phys->get_devpath() == devpath;
 }
 
+bool virt_ctlr_passthrough::contains_fd(int fd) const
+{
+    return phys->get_fd() == fd;
+}
+
 std::vector<phys_ctlr *> virt_ctlr_passthrough::get_phys_ctlrs()
 {
     std::vector<phys_ctlr *> ctlrs = { phys };

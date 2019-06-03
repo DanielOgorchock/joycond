@@ -16,6 +16,7 @@ class virt_ctlr
         virtual void handle_events() = 0;
         virtual bool contains_phys_ctlr(phys_ctlr const *ctlr) const = 0;
         virtual bool contains_phys_ctlr(char const *devpath) const = 0;
+        virtual bool contains_fd(int fd) const = 0;
         virtual std::vector<phys_ctlr *> get_phys_ctlrs() = 0;
 };
 
