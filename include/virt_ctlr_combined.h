@@ -4,12 +4,17 @@
 #include "virt_ctlr.h"
 #include "phys_ctlr.h"
 
+#include <libevdev/libevdev.h>
+
 class virt_ctlr_combined : public virt_ctlr
 {
     private:
         phys_ctlr *physl;
         phys_ctlr *physr;
+        struct libevdev_uinput *uidev;
+        int uifd;
 
+        void relay_events(struct phys_ctlr *phys);
     public:
         virt_ctlr_combined(phys_ctlr *physl, phys_ctlr *physr);
         virtual ~virt_ctlr_combined();
