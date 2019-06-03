@@ -5,5 +5,4 @@ KERNELS=="*057E:2009*", TAG+="joycond"
 KERNELS=="*057E:2006*", TAG+="joycond"
 KERNELS=="*057E:2007*", TAG+="joycond"
 
-TAG=="joycond", ENV{LIBINPUT_MODEL_QUIRKS_SKIP}="1"
 LABEL="joycond_end", ATTRS{capabilities/ff}=="0", TAG-="joycond"
