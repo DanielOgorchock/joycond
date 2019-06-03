@@ -74,6 +74,13 @@ void phys_ctlr::init_leds()
 
 }
 
+void phys_ctlr::handle_event(struct input_event const &ev)
+{
+    std::cout << "Event: " << libevdev_event_type_get_name(ev.type) << " "
+                           << libevdev_event_code_get_name(ev.type, ev.code) << " "
+                           << ev.value << std::endl;
+}
+
 //public
 phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
     evdev(nullptr),
@@ -82,7 +89,7 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
 {
     init_leds();
 
-    int fd = open(devname.c_str(), O_RDWR);
+    int fd = open(devname.c_str(), O_RDWR | O_NONBLOCK);
     if (fd < 0) {
         std::cerr << "Failed to open " << devname << " ; errno=" << errno << std::endl;
         exit(1);
@@ -92,9 +99,20 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
         exit(1);
     }
 
-    if (libevdev_grab(evdev, LIBEVDEV_GRAB)) {
-        std::cerr << "Failed to grab the evdev\n";
-        exit(1);
+    switch (libevdev_get_id_product(evdev)) {
+        case 0x2009:
+            model = Model::Procon;
+            break;
+        case 0x2006:
+            model = Model::Left_Joycon;
+            break;
+        case 0x2007:
+            model = Model::Right_Joycon;
+            break;
+        default:
+            model = Model::Unknown;
+            std::cerr << "Unknown product id = " << std::hex << libevdev_get_id_product(evdev) << std::endl;
+            break;
     }
 }
 
@@ -134,5 +152,29 @@ bool phys_ctlr::set_home_led(unsigned short brightness)
     home_led << brightness;
     home_led.flush();
     return true;
+}
+
+int phys_ctlr::get_fd()
+{
+    return libevdev_get_fd(evdev);
+}
+
+void phys_ctlr::handle_events()
+{
+    struct input_event ev;
+
+    int ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
+    while (ret == LIBEVDEV_READ_STATUS_SYNC || ret == LIBEVDEV_READ_STATUS_SUCCESS) {
+        if (ret == LIBEVDEV_READ_STATUS_SYNC) {
+            std::cout << "handle sync\n";
+            while (ret == LIBEVDEV_READ_STATUS_SYNC) {
+                handle_event(ev);
+                ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_SYNC, &ev);
+            }
+        } else if (ret == LIBEVDEV_READ_STATUS_SUCCESS) {
+            handle_event(ev);
+        }
+        ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
+    }
 }
 

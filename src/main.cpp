@@ -10,19 +10,26 @@ const int MAX_EVENTS = 10;
 
 std::map<std::string, phys_ctlr *> pairing_ctlrs;
 
-void add_new_ctlr(struct udev_device *dev)
+void add_new_ctlr(struct udev_device *dev, int epoll_fd)
 {
     std::string devpath = udev_device_get_devpath(dev);
     std::string devname = udev_device_get_devnode(dev);
+    struct epoll_event ctlr_event;
 
     if (!pairing_ctlrs.count(devpath)) {
         auto phys = new phys_ctlr(devpath, devname);
         std::cout << "Creating new phys_ctlr for " << devname << std::endl;
         pairing_ctlrs[devpath] = phys;
+        ctlr_event.events = EPOLLIN;
+        ctlr_event.data.fd = phys->get_fd();
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, phys->get_fd(), &ctlr_event)) {
+            std::cerr << "Failed to add ctlr_event to epoll; errno=" << errno << std::endl;
+            exit(1);
+        }
     }
 }
 
-int init_pairing_ctlrs(struct udev *udev)
+int init_pairing_ctlrs(struct udev *udev, int epoll_fd)
 {
     struct udev_enumerate *enumerate;
     struct udev_list_entry *devlist;
@@ -46,7 +53,7 @@ int init_pairing_ctlrs(struct udev *udev)
         struct udev_device *dev = udev_device_new_from_syspath(udev, path);
         std::string devpath = udev_device_get_devpath(dev);
 
-        add_new_ctlr(dev);
+        add_new_ctlr(dev, epoll_fd);
         udev_device_unref(dev);
     }
 
@@ -54,7 +61,7 @@ int init_pairing_ctlrs(struct udev *udev)
     return 0;
 }
 
-void udev_event_handler(struct udev_monitor *mon)
+void udev_event_handler(struct udev_monitor *mon, int epoll_fd)
 {
     struct udev_device *dev;
 
@@ -69,12 +76,23 @@ void udev_event_handler(struct udev_monitor *mon)
         std::cout << std::endl;
 
         if (std::string("add") == action && !pairing_ctlrs.count(devpath)) {
-            add_new_ctlr(dev);
+            add_new_ctlr(dev, epoll_fd);
         } else if (std::string("remove") == action) {
             if (pairing_ctlrs.count(devpath)) {
                 delete pairing_ctlrs[devpath];
                 pairing_ctlrs.erase(devpath);
             }
+        }
+    }
+}
+
+void ctlr_event_handler(int event_fd, int epoll_fd)
+{
+    for (auto& kv : pairing_ctlrs) {
+        struct phys_ctlr *ctlr = kv.second;
+        if (event_fd == ctlr->get_fd()) {
+            ctlr->handle_events();
+            break;
         }
     }
 }
@@ -88,6 +106,12 @@ int main(int argc, char *argv[])
     struct epoll_event udev_mon_event;
     struct epoll_event events[MAX_EVENTS];
     bool pairing_leds_on = false;
+
+    epoll_fd = epoll_create1(0);
+    if (epoll_fd < 0) {
+        std::cerr << "Failed to create epoll; " << epoll_fd << std::endl;
+        return 1;
+    }
 
     udev = udev_new();
     if (!udev) {
@@ -104,14 +128,8 @@ int main(int argc, char *argv[])
     udev_monitor_enable_receiving(mon);
     udev_mon_fd = udev_monitor_get_fd(mon);
 
-    if (init_pairing_ctlrs(udev)) {
+    if (init_pairing_ctlrs(udev, epoll_fd)) {
         std::cerr << "Failed to init pairing controllers list\n";
-        return 1;
-    }
-
-    epoll_fd = epoll_create1(0);
-    if (epoll_fd < 0) {
-        std::cerr << "Failed to create epoll; " << epoll_fd << std::endl;
         return 1;
     }
 
@@ -133,7 +151,9 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < nfds; ++i) {
             if (events[i].data.fd == udev_mon_fd) {
-                udev_event_handler(mon);
+                udev_event_handler(mon, epoll_fd);
+            } else {
+                ctlr_event_handler(events[i].data.fd, epoll_fd);
             }
         }
 
