@@ -3,12 +3,15 @@
 #include <iostream>
 #include <libudev.h>
 #include <sys/epoll.h>
+#include <vector>
 
 #include "phys_ctlr.h"
+#include "virt_ctlr_passthrough.h"
 
 const int MAX_EVENTS = 10;
 
 std::map<std::string, phys_ctlr *> pairing_ctlrs;
+std::vector<virt_ctlr *> active_ctlrs;
 
 void add_new_ctlr(struct udev_device *dev, int epoll_fd)
 {
@@ -58,6 +61,46 @@ int init_pairing_ctlrs(struct udev *udev, int epoll_fd)
     return 0;
 }
 
+void remove_ctlr(std::string const &devpath, int epoll_fd)
+{
+    struct epoll_event ctlr_event;
+
+    if (pairing_ctlrs.count(devpath)) {
+        ctlr_event.events = EPOLLIN;
+        ctlr_event.data.fd = pairing_ctlrs[devpath]->get_fd();
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, pairing_ctlrs[devpath]->get_fd(), &ctlr_event)) {
+            std::cerr << "Failed to remove ctlr_event to epoll; errno=" << errno << std::endl;
+            exit(1);
+        }
+        delete pairing_ctlrs[devpath];
+        pairing_ctlrs.erase(devpath);
+    } else {
+        for (int i = 0; i < active_ctlrs.size(); i++) {
+            virt_ctlr *virt = active_ctlrs[i];
+            if (virt->contains_phys_ctlr(devpath.c_str())) {
+                for (auto phys : virt->get_phys_ctlrs()) {
+                    if (devpath == phys->get_devpath()) {
+                        ctlr_event.events = EPOLLIN;
+                        ctlr_event.data.fd = phys->get_fd();
+                        if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, phys->get_fd(), &ctlr_event)) {
+                            std::cerr << "Failed to remove ctlr_event to epoll; errno=" << errno << std::endl;
+                            exit(1);
+                        }
+                        delete phys;
+                    } else {
+                        phys->grab();
+                        phys->set_all_player_leds(false);
+                        pairing_ctlrs[phys->get_devpath()] = phys;
+                    }
+                }
+                delete virt;
+                active_ctlrs[i] = nullptr; // free up slot for other ctlr
+                break;
+            }
+        }
+    }
+}
+
 void udev_event_handler(struct udev_monitor *mon, int epoll_fd)
 {
     struct udev_device *dev;
@@ -75,12 +118,33 @@ void udev_event_handler(struct udev_monitor *mon, int epoll_fd)
         if (std::string("add") == action && !pairing_ctlrs.count(devpath)) {
             add_new_ctlr(dev, epoll_fd);
         } else if (std::string("remove") == action) {
-            if (pairing_ctlrs.count(devpath)) {
-                delete pairing_ctlrs[devpath];
-                pairing_ctlrs.erase(devpath);
-            }
+            remove_ctlr(devpath, epoll_fd);
         }
     }
+}
+
+void add_passthrough_ctlr(phys_ctlr *phys)
+{
+    struct virt_ctlr_passthrough *passthrough;
+
+    passthrough = new virt_ctlr_passthrough(phys);
+    phys->set_all_player_leds(false);
+
+    bool found_slot = false;
+    for (int i = 0; i < active_ctlrs.size(); i++) {
+        if (!active_ctlrs[i]) {
+            found_slot = true;
+            phys->set_player_led(i % 4, true);
+            active_ctlrs[i] = passthrough;
+            break;
+        }
+    }
+    if (!found_slot) {
+        phys->set_player_led(active_ctlrs.size() % 4, true);
+        active_ctlrs.push_back(passthrough);
+    }
+
+    pairing_ctlrs.erase(phys->get_devpath());
 }
 
 void ctlr_event_handler(int event_fd, int epoll_fd)
@@ -92,12 +156,14 @@ void ctlr_event_handler(int event_fd, int epoll_fd)
             switch (ctlr->get_pairing_state()) {
                 case phys_ctlr::PairingState::Lone:
                     std::cout << "Lone controller paired\n";
+                    add_passthrough_ctlr(ctlr);
                     break;
                 case phys_ctlr::PairingState::Waiting:
                     std::cout << "Waiting controller needs partner\n";
                     break;
                 case phys_ctlr::PairingState::Horizontal:
                     std::cout << "Joy-Con paired in horizontal mode\n";
+                    add_passthrough_ctlr(ctlr);
                 default:
                     break;
             }
