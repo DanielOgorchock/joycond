@@ -89,6 +89,18 @@ void ctlr_event_handler(int event_fd, int epoll_fd)
         struct phys_ctlr *ctlr = kv.second;
         if (event_fd == ctlr->get_fd()) {
             ctlr->handle_events();
+            switch (ctlr->get_pairing_state()) {
+                case phys_ctlr::PairingState::Lone:
+                    std::cout << "Lone controller paired\n";
+                    break;
+                case phys_ctlr::PairingState::Waiting:
+                    std::cout << "Waiting controller needs partner\n";
+                    break;
+                case phys_ctlr::PairingState::Horizontal:
+                    std::cout << "Joy-Con paired in horizontal mode\n";
+                default:
+                    break;
+            }
             break;
         }
     }

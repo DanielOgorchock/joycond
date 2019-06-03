@@ -31,7 +31,6 @@ std::optional<std::string> phys_ctlr::get_led_path(std::string const &name)
 
 void phys_ctlr::init_leds()
 {
-    std::cout << "init_leds\n";
     auto tmp = get_led_path("player1");
     if (tmp.has_value()) {
         player_leds[0].open(tmp.value() + "/brightness");
@@ -76,9 +75,71 @@ void phys_ctlr::init_leds()
 
 void phys_ctlr::handle_event(struct input_event const &ev)
 {
-    std::cout << "Event: " << libevdev_event_type_get_name(ev.type) << " "
-                           << libevdev_event_code_get_name(ev.type, ev.code) << " "
-                           << ev.value << std::endl;
+    int type = ev.type;
+    int code = ev.code;
+    int val = ev.value;
+
+    if (type != EV_KEY)
+        return;
+
+    switch (model) {
+        case Model::Procon:
+            switch (code) {
+                case BTN_TL:
+                    l = val;
+                    break;
+                case BTN_TL2:
+                    zl = val;
+                    break;
+                case BTN_TR:
+                    r = val;
+                    break;
+                case BTN_TR2:
+                    zr = val;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case Model::Left_Joycon:
+            switch (code) {
+                case BTN_TL:
+                    l = val;
+                    break;
+                case BTN_TL2:
+                    zl = val;
+                    break;
+                case BTN_TR:
+                    sl = val;
+                    break;
+                case BTN_TR2:
+                    sr = val;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case Model::Right_Joycon:
+            switch (code) {
+                case BTN_TL:
+                    sl = val;
+                    break;
+                case BTN_TL2:
+                    sr = val;
+                    break;
+                case BTN_TR:
+                    r = val;
+                    break;
+                case BTN_TR2:
+                    zr = val;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
 }
 
 //public
@@ -102,18 +163,23 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
     switch (libevdev_get_id_product(evdev)) {
         case 0x2009:
             model = Model::Procon;
+            std::cout << "Found Pro Controller\n";
             break;
         case 0x2006:
             model = Model::Left_Joycon;
+            std::cout << "Found Left Joy-Con\n";
             break;
         case 0x2007:
             model = Model::Right_Joycon;
+            std::cout << "Found Right Joy-Con\n";
             break;
         default:
             model = Model::Unknown;
             std::cerr << "Unknown product id = " << std::hex << libevdev_get_id_product(evdev) << std::endl;
             break;
     }
+
+    grab();
 }
 
 phys_ctlr::~phys_ctlr()
@@ -176,5 +242,32 @@ void phys_ctlr::handle_events()
         }
         ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
     }
+}
+
+enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
+{
+    enum phys_ctlr::PairingState state = PairingState::Pairing;
+
+    switch (model) {
+        case Model::Procon:
+            if ((l | zl) && (r | zr))
+                state = PairingState::Lone;
+            break;
+        case Model::Left_Joycon:
+            if (l ^ zl)
+                state = PairingState::Waiting;
+            else if (r && zr)
+                state = PairingState::Horizontal;
+            break;
+        case Model::Right_Joycon:
+            if (r ^ zr)
+                state = PairingState::Waiting;
+            else if (l && zl)
+                state = PairingState::Horizontal;
+            break;
+        default:
+            break;
+    }
+    return state;
 }
 

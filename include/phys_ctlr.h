@@ -10,6 +10,7 @@ class phys_ctlr
 {
     public:
         enum class Model { Procon, Left_Joycon, Right_Joycon, Unknown };
+        enum class PairingState { Pairing, Lone, Waiting, Horizontal };
 
     private:
         std::string devpath;
@@ -36,6 +37,9 @@ class phys_ctlr
         int get_fd();
         void handle_events();
         enum Model get_model() const { return model; }
+        enum PairingState get_pairing_state() const;
+        void grab() { libevdev_grab(evdev, LIBEVDEV_GRAB); }
+        void ungrab() { libevdev_grab(evdev, LIBEVDEV_UNGRAB); }
 };
 
 #endif
