@@ -256,13 +256,13 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
         case Model::Left_Joycon:
             if (l ^ zl)
                 state = PairingState::Waiting;
-            else if (r && zr)
+            else if (sl && sr)
                 state = PairingState::Horizontal;
             break;
         case Model::Right_Joycon:
             if (r ^ zr)
                 state = PairingState::Waiting;
-            else if (l && zl)
+            else if (sl && sr)
                 state = PairingState::Horizontal;
             break;
         default:
