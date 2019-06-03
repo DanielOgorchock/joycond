@@ -43,21 +43,18 @@ int init_pairing_ctlrs(struct udev *udev, int epoll_fd)
     udev_enumerate_add_match_tag(enumerate, "joycond");
     udev_enumerate_scan_devices(enumerate);
     devlist = udev_enumerate_get_list_entry(enumerate);
-    if (!devlist) {
-        std::cerr << "Failed to get udev enumeration list\n";
-        return 1;
+    if (devlist) {
+        udev_list_entry_foreach(deventry, devlist) {
+            char const *path = udev_list_entry_get_name(deventry);
+            struct udev_device *dev = udev_device_new_from_syspath(udev, path);
+            std::string devpath = udev_device_get_devpath(dev);
+
+            add_new_ctlr(dev, epoll_fd);
+            udev_device_unref(dev);
+        }
     }
-
-    udev_list_entry_foreach(deventry, devlist) {
-        char const *path = udev_list_entry_get_name(deventry);
-        struct udev_device *dev = udev_device_new_from_syspath(udev, path);
-        std::string devpath = udev_device_get_devpath(dev);
-
-        add_new_ctlr(dev, epoll_fd);
-        udev_device_unref(dev);
-    }
-
     udev_enumerate_unref(enumerate);
+
     return 0;
 }
 
