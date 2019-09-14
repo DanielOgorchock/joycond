@@ -37,6 +37,10 @@ void phys_ctlr::init_leds()
         if (!player_leds[0].is_open()) {
             std::cerr << "Failed to open player1 led brightness\n";
         }
+        player_led_triggers[0].open(tmp.value() + "/trigger");
+        if (!player_led_triggers[0].is_open()) {
+            std::cerr << "Failed to open player1 trigger\n";
+        }
     }
 
     tmp = get_led_path("player2");
@@ -44,6 +48,10 @@ void phys_ctlr::init_leds()
         player_leds[1].open(tmp.value() + "/brightness");
         if (!player_leds[1].is_open()) {
             std::cerr << "Failed to open player2 led brightness\n";
+        }
+        player_led_triggers[1].open(tmp.value() + "/trigger");
+        if (!player_led_triggers[1].is_open()) {
+            std::cerr << "Failed to open player2 trigger\n";
         }
     }
 
@@ -53,6 +61,10 @@ void phys_ctlr::init_leds()
         if (!player_leds[2].is_open()) {
             std::cerr << "Failed to open player3 led brightness\n";
         }
+        player_led_triggers[2].open(tmp.value() + "/trigger");
+        if (!player_led_triggers[2].is_open()) {
+            std::cerr << "Failed to open player3 trigger\n";
+        }
     }
 
     tmp = get_led_path("player4");
@@ -60,6 +72,10 @@ void phys_ctlr::init_leds()
         player_leds[3].open(tmp.value() + "/brightness");
         if (!player_leds[3].is_open()) {
             std::cerr << "Failed to open player4 led brightness\n";
+        }
+        player_led_triggers[3].open(tmp.value() + "/trigger");
+        if (!player_led_triggers[3].is_open()) {
+            std::cerr << "Failed to open player4 trigger\n";
         }
     }
 
@@ -230,6 +246,23 @@ bool phys_ctlr::set_home_led(unsigned short brightness)
 
     home_led << brightness;
     home_led.flush();
+    return true;
+}
+
+bool phys_ctlr::blink_player_leds()
+{
+    /* start with all player leds off */
+    set_all_player_leds(false);
+
+    for (int i = 0; i < 4; i++) {
+        try {
+            player_led_triggers[i] << "timer";
+            player_led_triggers[i].flush();
+        } catch (std::exception e) {
+            std::cerr << "Failed to select LED timer trigger. Is ledtrig-timer module probed?\n";
+            return false;
+        }
+    }
     return true;
 }
 

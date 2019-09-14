@@ -30,3 +30,6 @@ install(FILES udev/89-joycond.rules DESTINATION /lib/udev/rules.d/
 install(FILES systemd/joycond.service DESTINATION /etc/systemd/system
         PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ WORLD_READ
         )
+install(FILES systemd/joycond.conf DESTINATION /etc/modules-load.d
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+        )

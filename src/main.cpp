@@ -1,5 +1,4 @@
 #include <map>
-#include <chrono>
 #include <iostream>
 #include <libudev.h>
 #include <sys/epoll.h>
@@ -32,6 +31,7 @@ void add_new_ctlr(struct udev_device *dev, int epoll_fd)
             std::cerr << "Failed to add ctlr_event to epoll; errno=" << errno << std::endl;
             exit(1);
         }
+        phys->blink_player_leds();
     }
 }
 
@@ -96,9 +96,9 @@ void remove_ctlr(std::string const &devpath, int epoll_fd)
                         delete phys;
                     } else {
                         phys->grab();
-                        phys->set_all_player_leds(false);
                         pairing_ctlrs[phys->get_devpath()] = phys;
                         phys->zero_triggers();
+                        phys->blink_player_leds();
                     }
                 }
                 delete virt;
@@ -149,7 +149,9 @@ void add_combined_ctlr(phys_ctlr *physl, phys_ctlr *physr)
         }
     }
     if (!found_slot) {
+        physl->set_all_player_leds(false);
         physl->set_player_leds_to_player(active_ctlrs.size() % 4 + 1);
+        physr->set_all_player_leds(false);
         physr->set_player_leds_to_player(active_ctlrs.size() % 4 + 1);
         active_ctlrs.push_back(combined);
     }
@@ -173,6 +175,7 @@ void add_passthrough_ctlr(phys_ctlr *phys)
     for (int i = 0; i < active_ctlrs.size(); i++) {
         if (!active_ctlrs[i]) {
             found_slot = true;
+            phys->set_all_player_leds(false);
             phys->set_player_leds_to_player(i % 4 + 1);
             active_ctlrs[i] = passthrough;
             break;
@@ -282,7 +285,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    auto last_blink_millis = std::chrono::system_clock::now();
     while (true) {
         int nfds;
 
@@ -298,17 +300,6 @@ int main(int argc, char *argv[])
             } else {
                 ctlr_event_handler(events[i].data.fd, epoll_fd);
             }
-        }
-
-        using namespace std::chrono_literals;
-        auto current_millis = std::chrono::system_clock::now();
-        if (current_millis - last_blink_millis >= 500ms) {
-            for (auto& kv : pairing_ctlrs) {
-                if (!kv.second->set_all_player_leds(pairing_leds_on))
-                    std::cerr << "Failed to set player LEDS\n";
-            }
-            last_blink_millis = current_millis;
-            pairing_leds_on = !pairing_leds_on;
         }
     }
 

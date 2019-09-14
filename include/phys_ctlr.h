@@ -17,6 +17,7 @@ class phys_ctlr
         std::string devname;
         struct libevdev *evdev;
         std::fstream player_leds[4];
+        std::fstream player_led_triggers[4];
         std::fstream home_led;
         bool l, zl, r, zr, sl, sr;
         enum Model model;
@@ -35,6 +36,7 @@ class phys_ctlr
         bool set_all_player_leds(bool on);
         bool set_player_leds_to_player(int player);
         bool set_home_led(unsigned short brightness);
+        bool blink_player_leds();
         int get_fd();
         void handle_events();
         enum Model get_model() const { return model; }
