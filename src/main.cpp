@@ -3,6 +3,7 @@
 #include <iostream>
 #include <libudev.h>
 #include <sys/epoll.h>
+#include <unistd.h>
 #include <vector>
 
 #include "phys_ctlr.h"
@@ -23,6 +24,7 @@ void add_new_ctlr(struct udev_device *dev, int epoll_fd)
     struct epoll_event ctlr_event;
 
     if (!pairing_ctlrs.count(devpath)) {
+        sleep(1); // wait for led_classdevs to be created by driver (This is hacky, I know)
         auto phys = new phys_ctlr(devpath, devname);
         std::cout << "Creating new phys_ctlr for " << devname << std::endl;
         pairing_ctlrs[devpath] = phys;
