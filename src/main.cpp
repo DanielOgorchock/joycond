@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <map>
 #include <iostream>
 #include <libudev.h>
@@ -86,7 +87,9 @@ void remove_ctlr(std::string const &devpath, int epoll_fd)
             virt_ctlr *virt = active_ctlrs[i];
             if (virt->contains_phys_ctlr(devpath.c_str())) {
                 for (auto phys : virt->get_phys_ctlrs()) {
-                    if (devpath == phys->get_devpath()) {
+                    errno = 0;
+                    if (devpath == phys->get_devpath() || fcntl(phys->get_fd(), F_GETFD) == -1 ||
+                            errno == EBADF) {
                         ctlr_event.events = EPOLLIN;
                         ctlr_event.data.fd = phys->get_fd();
                         if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, phys->get_fd(), &ctlr_event)) {
