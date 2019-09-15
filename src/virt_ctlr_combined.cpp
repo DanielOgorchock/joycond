@@ -24,6 +24,11 @@ void virt_ctlr_combined::relay_events(struct phys_ctlr *phys)
                 ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_SYNC, &ev);
             }
         } else if (ret == LIBEVDEV_READ_STATUS_SUCCESS) {
+            /* First filter out the SL and SR buttons on each physical controller */
+            if (phys == physl && ev.type == EV_KEY && (ev.code == BTN_TR || ev.code == BTN_TR2))
+                continue;
+            else if (phys == physr && ev.type == EV_KEY && (ev.code == BTN_TL || ev.code == BTN_TL2))
+                continue;
             libevdev_uinput_write_event(uidev, ev.type, ev.code, ev.value);
         }
         ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
