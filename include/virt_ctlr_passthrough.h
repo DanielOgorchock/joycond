@@ -13,7 +13,7 @@ class virt_ctlr_passthrough : public virt_ctlr
         virt_ctlr_passthrough(phys_ctlr *phys);
         virtual ~virt_ctlr_passthrough();
 
-        virtual void handle_events();
+        virtual void handle_events(int fd);
         virtual bool contains_phys_ctlr(phys_ctlr const *ctlr) const;
         virtual bool contains_phys_ctlr(char const *devpath) const;
         virtual bool contains_fd(int fd) const;

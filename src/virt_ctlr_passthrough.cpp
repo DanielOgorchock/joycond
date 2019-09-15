@@ -16,7 +16,7 @@ virt_ctlr_passthrough::~virt_ctlr_passthrough()
 {
 }
 
-void virt_ctlr_passthrough::handle_events()
+void virt_ctlr_passthrough::handle_events(int fd)
 {
     phys->handle_events();
 }

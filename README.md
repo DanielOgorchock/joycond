@@ -15,5 +15,4 @@ With the joy-cons, to use a single contoller alone, hold ZL and L at the same ti
 
 To combine two joy-cons into a virtual input device, press a *single* trigger on both of them at the same time. A new uinput device will be created called "Nintendo Switch Combined Joy-Cons".
 
-# Known Limitations
--  Rumble support is non-existent currently for the combined joy-cons. I hope to add support for this soon.
+Rumble support is now functional for the combined joy-con uinput device.

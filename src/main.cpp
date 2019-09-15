@@ -131,12 +131,13 @@ void udev_event_handler(struct udev_monitor *mon, int epoll_fd)
     }
 }
 
-void add_combined_ctlr(phys_ctlr *physl, phys_ctlr *physr)
+void add_combined_ctlr(phys_ctlr *physl, phys_ctlr *physr, int epoll_fd)
 {
     struct virt_ctlr_combined *combined;
+    struct epoll_event ctlr_event;
 
     std::cout << "Creating combined joy-con input\n";
-    combined = new virt_ctlr_combined(physl, physr);
+    combined = new virt_ctlr_combined(physl, physr, epoll_fd);
 
     bool found_slot = false;
     for (int i = 0; i < active_ctlrs.size(); i++) {
@@ -158,6 +159,13 @@ void add_combined_ctlr(phys_ctlr *physl, phys_ctlr *physr)
 
     pairing_ctlrs.erase(physl->get_devpath());
     pairing_ctlrs.erase(physr->get_devpath());
+
+    ctlr_event.events = EPOLLIN;
+    ctlr_event.data.fd = combined->get_uinput_fd();
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, combined->get_uinput_fd(), &ctlr_event)) {
+        std::cerr << "Failed to add uinput ctlr_event to epoll; errno=" << errno << std::endl;
+        exit(1);
+    }
 }
 
 void add_passthrough_ctlr(phys_ctlr *phys)
@@ -214,7 +222,7 @@ void ctlr_event_handler(int event_fd, int epoll_fd)
                         }
                     }
                     if (left && right) {
-                        add_combined_ctlr(left, right);
+                        add_combined_ctlr(left, right, epoll_fd);
                         left = nullptr;
                         right = nullptr;
                     }
@@ -238,7 +246,7 @@ void ctlr_event_handler(int event_fd, int epoll_fd)
         if (!ctlr)
             continue;
         if (ctlr->contains_fd(event_fd))
-            ctlr->handle_events();
+            ctlr->handle_events(event_fd);
     }
 }
 

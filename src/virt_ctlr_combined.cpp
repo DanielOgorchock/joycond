@@ -4,6 +4,8 @@
 #include <fcntl.h>
 #include <iostream>
 #include <libevdev/libevdev-uinput.h>
+#include <linux/uinput.h>
+#include <sys/epoll.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -38,10 +40,100 @@ void virt_ctlr_combined::relay_events(struct phys_ctlr *phys)
     }
 }
 
+void virt_ctlr_combined::handle_uinput_event()
+{
+    struct input_event ev;
+    int ret;
+
+    while ((ret = read(get_uinput_fd(), &ev, sizeof(ev))) == sizeof(ev)) {
+        switch (ev.type) {
+            case EV_FF:
+                switch (ev.code) {
+                    default:
+                        /* Just forward this FF event on to the actual devices */
+                        if (write(physl->get_fd(), &ev, sizeof(ev)) != sizeof(ev))
+                            std::cerr << "Failed to forward EV_FF to physl\n";
+                        if (write(physr->get_fd(), &ev, sizeof(ev)) != sizeof(ev))
+                            std::cerr << "Failed to forward EV_FF to physr\n";
+                        break;
+                }
+                break;
+
+            case EV_UINPUT:
+                switch (ev.code) {
+                    case UI_FF_UPLOAD:
+                        {
+                            struct uinput_ff_upload upload = { 0 };
+                            struct ff_effect effect = { 0 };
+
+                            upload.request_id = ev.value;
+                            if (ioctl(get_uinput_fd(), UI_BEGIN_FF_UPLOAD, &upload))
+                                std::cerr << "Failed to get uinput_ff_upload: " << strerror(errno) << std::endl;
+
+                            effect = upload.effect;
+                            effect.id = -1;
+                            /* upload the effect to both devices */
+                            upload.retval = 0;
+                            if (ioctl(physl->get_fd(), EVIOCSFF, &effect) == -1)
+                                upload.retval = errno;
+
+                            /* reset effect */
+                            effect = upload.effect;
+                            effect.id = -1;
+                            if (ioctl(physr->get_fd(), EVIOCSFF, &effect) == -1)
+                                upload.retval = errno;
+
+                            if (upload.retval)
+                                std::cerr << "UI_FF_UPLOAD failed: " << strerror(upload.retval) << std::endl;
+
+                            if (ioctl(get_uinput_fd(), UI_END_FF_UPLOAD, &upload))
+                                std::cerr << "Failed to end uinput_ff_upload: " << strerror(errno) << std::endl;
+                            break;
+                        }
+                    case UI_FF_ERASE:
+                        {
+                            struct uinput_ff_erase erase = { 0 };
+
+                            erase.request_id = ev.value;
+                            if (ioctl(get_uinput_fd(), UI_BEGIN_FF_ERASE, &erase))
+                                std::cerr << "Failed to get uinput_ff_erase: " << strerror(errno) << std::endl;
+
+                            erase.retval = 0;
+                            if (ioctl(physl->get_fd(), EVIOCRMFF, erase.effect_id) == -1)
+                                erase.retval = errno;
+                            if (ioctl(physr->get_fd(), EVIOCRMFF, erase.effect_id) == -1)
+                                erase.retval = errno;
+
+                            if (erase.retval)
+                                std::cerr << "UI_FF_ERASE failed: " << strerror(erase.retval) << std::endl;
+
+                            if (ioctl(get_uinput_fd(), UI_END_FF_ERASE, &erase))
+                                std::cerr << "Failed to end uinput_ff_erase: " << strerror(errno) << std::endl;
+                            break;
+                        }
+                    default:
+                        std::cerr << "Unhandled EV_UNINPUT code=" << ev.code <<std::endl;
+                        break;
+                }
+                break;
+
+            default:
+                std::cerr << "Unhandled uinput type=" << ev.type << std::endl;
+                break;
+        }
+    }
+    if (ret < 0 && errno != EAGAIN) {
+        std::cerr << "Failed reading uinput fd; ret=" << strerror(errno) << std::endl;
+    } else if (ret > 0) {
+        std::cerr << "Uinput incorrect read size of " << ret << std::endl;
+    }
+}
+
 //public
-virt_ctlr_combined::virt_ctlr_combined(phys_ctlr *physl, phys_ctlr *physr) :
+virt_ctlr_combined::virt_ctlr_combined(phys_ctlr *physl, phys_ctlr *physr, int epoll_fd) :
     physl(physl),
-    physr(physr)
+    physr(physr),
+    epoll_fd(epoll_fd)
 {
     int ret;
 
@@ -60,18 +152,36 @@ virt_ctlr_combined::virt_ctlr_combined(phys_ctlr *physl, phys_ctlr *physr) :
         std::cerr << "Failed to create libevdev_uinput; " << ret << std::endl;
         exit(1);
     }
+
+    int flags = fcntl(get_uinput_fd(), F_GETFL, 0);
+    fcntl(get_uinput_fd(), F_SETFL, flags | O_NONBLOCK);
 }
 
 virt_ctlr_combined::~virt_ctlr_combined()
 {
+    struct epoll_event ctlr_event;
+
+    ctlr_event.events = EPOLLIN;
+    ctlr_event.data.fd = get_uinput_fd();
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, get_uinput_fd(), &ctlr_event)) {
+        std::cerr << "Failed to remove uinput ctlr_event from epoll; errno=" << errno << std::endl;
+        exit(1);
+    }
+
     libevdev_uinput_destroy(uidev);
     close(uifd);
 }
 
-void virt_ctlr_combined::handle_events()
+void virt_ctlr_combined::handle_events(int fd)
 {
-    relay_events(physl);
-    relay_events(physr);
+    if (fd == physl->get_fd())
+        relay_events(physl);
+    else if (fd == physr->get_fd())
+        relay_events(physr);
+    else if (fd == get_uinput_fd())
+        handle_uinput_event();
+    else
+        std::cerr << "fd=" << fd << " is an invalid fd for this combined controller\n";
 }
 
 bool virt_ctlr_combined::contains_phys_ctlr(phys_ctlr const *ctlr) const
@@ -86,11 +196,16 @@ bool virt_ctlr_combined::contains_phys_ctlr(char const *devpath) const
 
 bool virt_ctlr_combined::contains_fd(int fd) const
 {
-    return physl->get_fd() == fd || physr->get_fd() == fd;
+    return physl->get_fd() == fd || physr->get_fd() == fd || libevdev_uinput_get_fd(uidev) == fd;
 }
 
 std::vector<phys_ctlr *> virt_ctlr_combined::get_phys_ctlrs()
 {
     std::vector<phys_ctlr *> ctlrs = { physl, physr };
     return ctlrs;
+}
+
+int virt_ctlr_combined::get_uinput_fd()
+{
+    return libevdev_uinput_get_fd(uidev);
 }

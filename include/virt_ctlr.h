@@ -13,7 +13,7 @@ class virt_ctlr
         virt_ctlr() {}
         virtual ~virt_ctlr() {}
 
-        virtual void handle_events() = 0;
+        virtual void handle_events(int fd) = 0;
         virtual bool contains_phys_ctlr(phys_ctlr const *ctlr) const = 0;
         virtual bool contains_phys_ctlr(char const *devpath) const = 0;
         virtual bool contains_fd(int fd) const = 0;
