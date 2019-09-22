@@ -1,8 +1,8 @@
 ACTION!="add", GOTO="joycond_end"
 SUBSYSTEM!="input", GOTO="joycond_end"
 KERNEL!="event*", GOTO="joycond_end"
-KERNELS=="*057E:2009*", TAG+="joycond"
-KERNELS=="*057E:2006*", TAG+="joycond"
-KERNELS=="*057E:2007*", TAG+="joycond"
+KERNELS=="*057E:2009*", TAG+="joycond", MODE="0600"
+KERNELS=="*057E:2006*", TAG+="joycond", MODE="0600"
+KERNELS=="*057E:2007*", TAG+="joycond", MODE="0600"
 
 LABEL="joycond_end", ATTRS{capabilities/ff}=="0", TAG-="joycond"

@@ -1,5 +1,8 @@
 #include "virt_ctlr_passthrough.h"
 
+#include <iostream>
+#include <string.h>
+#include <sys/stat.h>
 #include <vector>
 
 //private
@@ -9,6 +12,8 @@ virt_ctlr_passthrough::virt_ctlr_passthrough(phys_ctlr *phys) :
     phys(phys)
 {
     // Allow other processes to use the input now.
+    if (fchmod(phys->get_fd(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH))
+        std::cerr << "Failed to change evdev permissions; " << strerror(errno) << std::endl;
     phys->ungrab();
 }
 
