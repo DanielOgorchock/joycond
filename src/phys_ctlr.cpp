@@ -237,6 +237,7 @@ bool phys_ctlr::set_player_leds_to_player(int player)
     for (int i = 0; i < player; i++) {
         set_player_led(i, true);
     }
+    return true;
 }
 
 bool phys_ctlr::set_home_led(unsigned short brightness)
