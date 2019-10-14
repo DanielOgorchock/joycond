@@ -1,4 +1,6 @@
-joycond is a linux daemon which uses the evdev devices provided by hid-joycon to implement joycon pairing.
+joycond is a linux daemon which uses the evdev devices provided by hid-nintendo (formerly known as hid-joycon) to implement joycon pairing.
+
+hid-nintendo is currently in review on the linux-input mailing list. The most recent patches are currently found at https://github.com/DanielOgorchock/linux
 
 # Installation
 1. clone the repo
