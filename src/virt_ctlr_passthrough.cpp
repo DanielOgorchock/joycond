@@ -8,7 +8,7 @@
 //private
 
 //public
-virt_ctlr_passthrough::virt_ctlr_passthrough(phys_ctlr *phys) :
+virt_ctlr_passthrough::virt_ctlr_passthrough(std::shared_ptr<phys_ctlr> phys) :
     phys(phys)
 {
     // Allow other processes to use the input now.
@@ -26,7 +26,7 @@ void virt_ctlr_passthrough::handle_events(int fd)
     phys->handle_events();
 }
 
-bool virt_ctlr_passthrough::contains_phys_ctlr(phys_ctlr const *ctlr) const
+bool virt_ctlr_passthrough::contains_phys_ctlr(std::shared_ptr<phys_ctlr> const ctlr) const
 {
     return phys == ctlr;
 }
@@ -41,8 +41,8 @@ bool virt_ctlr_passthrough::contains_fd(int fd) const
     return phys->get_fd() == fd;
 }
 
-std::vector<phys_ctlr *> virt_ctlr_passthrough::get_phys_ctlrs()
+std::vector<std::shared_ptr<phys_ctlr>> virt_ctlr_passthrough::get_phys_ctlrs()
 {
-    std::vector<phys_ctlr *> ctlrs = { phys };
+    std::vector<std::shared_ptr<phys_ctlr>> ctlrs = { phys };
     return ctlrs;
 }

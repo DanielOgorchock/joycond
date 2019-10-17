@@ -4,20 +4,22 @@
 #include "virt_ctlr.h"
 #include "phys_ctlr.h"
 
+#include <memory>
+
 class virt_ctlr_passthrough : public virt_ctlr
 {
     private:
-        phys_ctlr *phys;
+        std::shared_ptr<phys_ctlr> phys;
 
     public:
-        virt_ctlr_passthrough(phys_ctlr *phys);
+        virt_ctlr_passthrough(std::shared_ptr<phys_ctlr> phys);
         virtual ~virt_ctlr_passthrough();
 
         virtual void handle_events(int fd);
-        virtual bool contains_phys_ctlr(phys_ctlr const *ctlr) const;
+        virtual bool contains_phys_ctlr(std::shared_ptr<phys_ctlr> const ctlr) const;
         virtual bool contains_phys_ctlr(char const *devpath) const;
         virtual bool contains_fd(int fd) const;
-        virtual std::vector<phys_ctlr *> get_phys_ctlrs();
+        virtual std::vector<std::shared_ptr<phys_ctlr>> get_phys_ctlrs();
 };
 
 #endif

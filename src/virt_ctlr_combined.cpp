@@ -12,7 +12,7 @@
 #include <vector>
 
 //private
-void virt_ctlr_combined::relay_events(struct phys_ctlr *phys)
+void virt_ctlr_combined::relay_events(std::shared_ptr<phys_ctlr> phys)
 {
     struct input_event ev;
     struct libevdev *evdev = phys->get_evdev();
@@ -130,10 +130,10 @@ void virt_ctlr_combined::handle_uinput_event()
 }
 
 //public
-virt_ctlr_combined::virt_ctlr_combined(phys_ctlr *physl, phys_ctlr *physr, int epoll_fd) :
+virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::shared_ptr<phys_ctlr> physr, epoll_mgr& epoll_manager) :
     physl(physl),
     physr(physr),
-    epoll_fd(epoll_fd)
+    epoll_manager(epoll_manager)
 {
     int ret;
 
@@ -155,18 +155,17 @@ virt_ctlr_combined::virt_ctlr_combined(phys_ctlr *physl, phys_ctlr *physr, int e
 
     int flags = fcntl(get_uinput_fd(), F_GETFL, 0);
     fcntl(get_uinput_fd(), F_SETFL, flags | O_NONBLOCK);
+
+    subscriber = std::make_shared<epoll_subscriber>(std::vector({get_uinput_fd()}),
+                                                    [=](int event_fd){handle_events(event_fd);});
+    epoll_manager.add_subscriber(subscriber);
 }
 
 virt_ctlr_combined::~virt_ctlr_combined()
 {
     struct epoll_event ctlr_event;
 
-    ctlr_event.events = EPOLLIN;
-    ctlr_event.data.fd = get_uinput_fd();
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, get_uinput_fd(), &ctlr_event)) {
-        std::cerr << "Failed to remove uinput ctlr_event from epoll; errno=" << errno << std::endl;
-        exit(1);
-    }
+    epoll_manager.remove_subscriber(subscriber);
 
     libevdev_uinput_destroy(uidev);
     close(uifd);
@@ -184,7 +183,7 @@ void virt_ctlr_combined::handle_events(int fd)
         std::cerr << "fd=" << fd << " is an invalid fd for this combined controller\n";
 }
 
-bool virt_ctlr_combined::contains_phys_ctlr(phys_ctlr const *ctlr) const
+bool virt_ctlr_combined::contains_phys_ctlr(std::shared_ptr<phys_ctlr> const ctlr) const
 {
     return physl == ctlr || physr == ctlr;
 }
@@ -199,9 +198,9 @@ bool virt_ctlr_combined::contains_fd(int fd) const
     return physl->get_fd() == fd || physr->get_fd() == fd || libevdev_uinput_get_fd(uidev) == fd;
 }
 
-std::vector<phys_ctlr *> virt_ctlr_combined::get_phys_ctlrs()
+std::vector<std::shared_ptr<phys_ctlr>> virt_ctlr_combined::get_phys_ctlrs()
 {
-    std::vector<phys_ctlr *> ctlrs = { physl, physr };
+    std::vector<std::shared_ptr<phys_ctlr>> ctlrs = { physl, physr };
     return ctlrs;
 }
 

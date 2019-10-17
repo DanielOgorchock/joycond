@@ -6,5 +6,9 @@ target_sources(
         virt_ctlr.cpp
         virt_ctlr_passthrough.cpp
         virt_ctlr_combined.cpp
+        epoll_mgr.cpp
+        epoll_subscriber.cpp
+        ctlr_detector_udev.cpp
+        ctlr_mgr.cpp
     )
 

@@ -8,6 +8,7 @@ pkg_check_modules(LIBEVDEV REQUIRED libevdev)
 pkg_check_modules(LIBUDEV REQUIRED libudev)
 
 add_executable(joycond "")
+target_compile_options(joycond PRIVATE -Wall)
 include_directories(
     include/
     ${LIBEVDEV_INCLUDE_DIRS}
