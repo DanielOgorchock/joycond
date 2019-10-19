@@ -234,6 +234,12 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
     libevdev_enable_event_code(virt_evdev, EV_FF, FF_SINE, NULL);
     libevdev_enable_event_code(virt_evdev, EV_FF, FF_GAIN, NULL);
 
+    // Set the product information to a left joy-con's product info (but with virtual bus type)
+    libevdev_set_id_vendor(virt_evdev, 0x57e);
+    libevdev_set_id_product(virt_evdev, 0x2006);
+    libevdev_set_id_bustype(virt_evdev, BUS_VIRTUAL);
+    libevdev_set_id_version(virt_evdev, 0x0000);
+
     ret = libevdev_uinput_create_from_device(virt_evdev, LIBEVDEV_UINPUT_OPEN_MANAGED, &uidev);
     if (ret) {
         std::cerr << "Failed to create libevdev_uinput; " << ret << std::endl;
