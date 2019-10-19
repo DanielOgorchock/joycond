@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <glob.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -195,7 +196,10 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
             break;
     }
 
+    // Prevent other users from having access to the evdev until it's paired
     grab();
+    if (fchmod(get_fd(), S_IRUSR | S_IWUSR))
+        std::cerr << "Failed to change evdev permissions; " << strerror(errno) << std::endl;
 }
 
 phys_ctlr::~phys_ctlr()
