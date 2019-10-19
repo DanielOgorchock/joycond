@@ -6,6 +6,7 @@
 #include "epoll_mgr.h"
 
 #include <libevdev/libevdev.h>
+#include <map>
 #include <memory>
 
 class virt_ctlr_combined : public virt_ctlr
@@ -18,6 +19,7 @@ class virt_ctlr_combined : public virt_ctlr
         struct libevdev *virt_evdev;
         struct libevdev_uinput *uidev;
         int uifd;
+        std::map<int, std::pair<struct ff_effect, struct ff_effect>> rumble_effects;
 
         void relay_events(std::shared_ptr<phys_ctlr> phys);
         void handle_uinput_event();

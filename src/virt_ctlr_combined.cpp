@@ -48,20 +48,29 @@ void virt_ctlr_combined::handle_uinput_event()
     while ((ret = read(get_uinput_fd(), &ev, sizeof(ev))) == sizeof(ev)) {
         switch (ev.type) {
             case EV_FF:
-                switch (ev.code) {
-                    default:
-                        /* Just forward this FF event on to the actual devices */
-                        if (physl) {
-                            if (write(physl->get_fd(), &ev, sizeof(ev)) != sizeof(ev))
-                                std::cerr << "Failed to forward EV_FF to physl\n";
-                        }
-                        if (physr) {
-                            if (write(physr->get_fd(), &ev, sizeof(ev)) != sizeof(ev))
-                                std::cerr << "Failed to forward EV_FF to physr\n";
-                        }
-                        break;
+                {
+                    struct input_event redirectedl = ev;
+                    struct input_event redirectedr = ev;
+
+                    if (!rumble_effects.count(ev.code)) {
+                        if (ev.code < FF_GAIN)
+                            std::cerr << "ERROR: ff_effect with id=" << ev.code << " is not in map\n";
+                    } else {
+                        redirectedl.code = rumble_effects[ev.code].first.id;
+                        redirectedr.code = rumble_effects[ev.code].second.id;
+                    }
+
+                    /* Just forward this FF event on to the actual devices */
+                    if (physl) {
+                        if (write(physl->get_fd(), &redirectedl, sizeof(redirectedl)) != sizeof(redirectedl))
+                            std::cerr << "Failed to forward EV_FF to physl\n";
+                    }
+                    if (physr) {
+                        if (write(physr->get_fd(), &redirectedr, sizeof(redirectedr)) != sizeof(redirectedr))
+                            std::cerr << "Failed to forward EV_FF to physr\n";
+                    }
+                    break;
                 }
-                break;
 
             case EV_UINPUT:
                 switch (ev.code) {
@@ -69,6 +78,8 @@ void virt_ctlr_combined::handle_uinput_event()
                         {
                             struct uinput_ff_upload upload = { 0 };
                             struct ff_effect effect = { 0 };
+                            struct ff_effect effect_l = { 0 };
+                            struct ff_effect effect_r = { 0 };
 
                             upload.request_id = ev.value;
                             if (ioctl(get_uinput_fd(), UI_BEGIN_FF_UPLOAD, &upload))
@@ -81,22 +92,30 @@ void virt_ctlr_combined::handle_uinput_event()
                             if (physl) {
                                 if (ioctl(physl->get_fd(), EVIOCSFF, &effect) == -1)
                                     upload.retval = errno;
+                                effect_l = effect;
                             }
-
-                            /* reset effect */
-                            effect = upload.effect;
-                            effect.id = -1;
 
                             if (physr) {
+                                /* reset effect */
+                                effect = upload.effect;
+                                effect.id = -1;
                                 if (ioctl(physr->get_fd(), EVIOCSFF, &effect) == -1)
                                     upload.retval = errno;
+                                effect_r = effect;
                             }
+
+                            upload.effect = effect;
 
                             if (upload.retval)
                                 std::cerr << "UI_FF_UPLOAD failed: " << strerror(upload.retval) << std::endl;
 
+                            if (rumble_effects.count(effect.id))
+                                std::cerr << "WARNING: ff_effect already in map\n";
+                            rumble_effects[effect.id] = std::make_pair(effect_l, effect_r);
+
                             if (ioctl(get_uinput_fd(), UI_END_FF_UPLOAD, &upload))
                                 std::cerr << "Failed to end uinput_ff_upload: " << strerror(errno) << std::endl;
+
                             break;
                         }
                     case UI_FF_ERASE:
@@ -119,9 +138,14 @@ void virt_ctlr_combined::handle_uinput_event()
 
                             if (erase.retval)
                                 std::cerr << "UI_FF_ERASE failed: " << strerror(erase.retval) << std::endl;
+                            else if (!rumble_effects.count(erase.effect_id))
+                                std::cerr << "WARNING: effect_id not in rumble_effects map\n";
+                            else
+                                rumble_effects.erase(erase.effect_id);
 
                             if (ioctl(get_uinput_fd(), UI_END_FF_ERASE, &erase))
                                 std::cerr << "Failed to end uinput_ff_erase: " << strerror(errno) << std::endl;
+
                             break;
                         }
                     default:
@@ -150,7 +174,8 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
     subscriber(nullptr),
     virt_evdev(nullptr),
     uidev(nullptr),
-    uifd(-1)
+    uifd(-1),
+    rumble_effects()
 {
     int ret;
 
@@ -300,6 +325,20 @@ void virt_ctlr_combined::add_phys_ctlr(std::shared_ptr<phys_ctlr> phys)
     } else {
         std::cerr << "ERROR: Attempted to add invalid controller to combined joy-cons\n";
         exit(EXIT_FAILURE);
+    }
+
+    // re-add all the ff_effects to the reconnected controller
+    for (auto& kv : rumble_effects) {
+        struct ff_effect* effect;
+
+        if (phys == physl)
+            effect = &kv.second.first;
+        else
+            effect = &kv.second.second;
+        effect->id = -1;
+
+        if (ioctl(phys->get_fd(), EVIOCSFF, effect) == -1)
+            std::cerr << "ERROR: Failed to reupload ff_ffect: " << strerror(errno) << std::endl;
     }
 }
 
