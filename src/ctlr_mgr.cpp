@@ -69,7 +69,7 @@ void ctlr_mgr::add_passthrough_ctlr(std::shared_ptr<phys_ctlr> phys)
         right = nullptr;
 
     bool found_slot = false;
-    for (int i = 0; i < paired_controllers.size(); i++) {
+    for (unsigned int i = 0; i < paired_controllers.size(); i++) {
         if (!paired_controllers[i]) {
             found_slot = true;
             phys->set_all_player_leds(false);
@@ -94,7 +94,7 @@ void ctlr_mgr::add_combined_ctlr()
     std::cout << "Creating combined joy-con input\n";
 
     bool found_slot = false;
-    for (int i = 0; i < paired_controllers.size(); i++) {
+    for (unsigned int i = 0; i < paired_controllers.size(); i++) {
         if (!paired_controllers[i]) {
             found_slot = true;
             left->set_player_leds_to_player(i % 4 + 1);

@@ -161,9 +161,9 @@ void phys_ctlr::handle_event(struct input_event const &ev)
 
 //public
 phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
-    evdev(nullptr),
     devpath(devpath),
-    devname(devname)
+    devname(devname),
+    evdev(nullptr)
 {
     init_leds();
 
@@ -216,7 +216,7 @@ bool phys_ctlr::set_player_led(int index, bool on)
     if (index > 3 || !player_leds[index].is_open())
         return false;
 
-    player_leds[index] << on ? '1' : '0';
+    player_leds[index] << (on ? '1' : '0');
     player_leds[index].flush();
     return true;
 }
@@ -263,7 +263,7 @@ bool phys_ctlr::blink_player_leds()
         try {
             player_led_triggers[i] << "timer";
             player_led_triggers[i].flush();
-        } catch (std::exception e) {
+        } catch (std::exception& e) {
             std::cerr << "Failed to select LED timer trigger. Is ledtrig-timer module probed?\n";
             return false;
         }

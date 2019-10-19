@@ -163,8 +163,6 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
 
 virt_ctlr_combined::~virt_ctlr_combined()
 {
-    struct epoll_event ctlr_event;
-
     epoll_manager.remove_subscriber(subscriber);
 
     libevdev_uinput_destroy(uidev);

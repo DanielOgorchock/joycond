@@ -4,8 +4,8 @@
 
 //public
 epoll_subscriber::epoll_subscriber(std::vector<int> fds, std::function<void(int event_fd)> callback) :
-    event_fds(fds),
-    event_callback(callback)
+    event_callback(callback),
+    event_fds(fds)
 {
 }
 
