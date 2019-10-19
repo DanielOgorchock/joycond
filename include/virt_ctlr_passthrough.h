@@ -20,6 +20,9 @@ class virt_ctlr_passthrough : public virt_ctlr
         virtual bool contains_phys_ctlr(char const *devpath) const;
         virtual bool contains_fd(int fd) const;
         virtual std::vector<std::shared_ptr<phys_ctlr>> get_phys_ctlrs();
+        virtual void remove_phys_ctlr(const std::shared_ptr<phys_ctlr> phys);
+        virtual void add_phys_ctlr(std::shared_ptr<phys_ctlr> phys);
+        virtual enum phys_ctlr::Model needs_model();
 };
 
 #endif

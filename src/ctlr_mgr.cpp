@@ -131,15 +131,37 @@ ctlr_mgr::~ctlr_mgr()
 
 void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
 {
+    std::shared_ptr<phys_ctlr> phys = nullptr;
+
     if (!unpaired_controllers.count(devpath)) {
         std::cout << "Creating new phys_ctlr for " << devname << std::endl;
         sleep(1); // wait for led_classdevs to be created by driver (This is hacky, I know)
-        std::shared_ptr<phys_ctlr> phys(new phys_ctlr(devpath, devname));
+        phys.reset(new phys_ctlr(devpath, devname));
         unpaired_controllers[devpath] = phys;
         phys->blink_player_leds();
         subscribers[devpath] = std::make_shared<epoll_subscriber>(std::vector({phys->get_fd()}),
                                                 [=](int event_fd){epoll_event_callback(event_fd);});
         epoll_manager.add_subscriber(subscribers[devpath]);
+    } else {
+        std::cerr << "Attempting to add existing phys_ctlr to controller manager\n";
+        return;
+    }
+
+    // Now check if this is a reconnecting joy-con
+    for (unsigned int i = 0; i < paired_controllers.size(); i++) {
+        auto& virt = paired_controllers[i];
+
+        if (!virt)
+            continue;
+
+        if (virt->needs_model() == phys->get_model() && phys->get_model() != phys_ctlr::Model::Unknown &&
+                virt->supports_hotplug()) {
+            std::cout << "Detected reconnected joy-con\n";
+            phys->set_all_player_leds(false);
+            phys->set_player_leds_to_player(i % 4 + 1);
+            virt->add_phys_ctlr(phys);
+            unpaired_controllers.erase(phys->get_devpath());
+        }
     }
 }
 
@@ -164,8 +186,14 @@ void ctlr_mgr::remove_ctlr(const std::string& devpath)
         bool found = false;
         for (auto phys : ctlr->get_phys_ctlrs()) {
             if (phys->get_devpath() == devpath) {
-                std::cout << "unpairing controller\n";
-                ctlr = nullptr;
+                if (ctlr->supports_hotplug())
+                    ctlr->remove_phys_ctlr(phys);
+
+                if (ctlr->no_ctlrs_left()) {
+                    std::cout << "unpairing controller\n";
+                    ctlr = nullptr;
+                }
+
                 found = true;
                 break;
             }

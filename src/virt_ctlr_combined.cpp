@@ -51,10 +51,14 @@ void virt_ctlr_combined::handle_uinput_event()
                 switch (ev.code) {
                     default:
                         /* Just forward this FF event on to the actual devices */
-                        if (write(physl->get_fd(), &ev, sizeof(ev)) != sizeof(ev))
-                            std::cerr << "Failed to forward EV_FF to physl\n";
-                        if (write(physr->get_fd(), &ev, sizeof(ev)) != sizeof(ev))
-                            std::cerr << "Failed to forward EV_FF to physr\n";
+                        if (physl) {
+                            if (write(physl->get_fd(), &ev, sizeof(ev)) != sizeof(ev))
+                                std::cerr << "Failed to forward EV_FF to physl\n";
+                        }
+                        if (physr) {
+                            if (write(physr->get_fd(), &ev, sizeof(ev)) != sizeof(ev))
+                                std::cerr << "Failed to forward EV_FF to physr\n";
+                        }
                         break;
                 }
                 break;
@@ -74,14 +78,19 @@ void virt_ctlr_combined::handle_uinput_event()
                             effect.id = -1;
                             /* upload the effect to both devices */
                             upload.retval = 0;
-                            if (ioctl(physl->get_fd(), EVIOCSFF, &effect) == -1)
-                                upload.retval = errno;
+                            if (physl) {
+                                if (ioctl(physl->get_fd(), EVIOCSFF, &effect) == -1)
+                                    upload.retval = errno;
+                            }
 
                             /* reset effect */
                             effect = upload.effect;
                             effect.id = -1;
-                            if (ioctl(physr->get_fd(), EVIOCSFF, &effect) == -1)
-                                upload.retval = errno;
+
+                            if (physr) {
+                                if (ioctl(physr->get_fd(), EVIOCSFF, &effect) == -1)
+                                    upload.retval = errno;
+                            }
 
                             if (upload.retval)
                                 std::cerr << "UI_FF_UPLOAD failed: " << strerror(upload.retval) << std::endl;
@@ -99,10 +108,14 @@ void virt_ctlr_combined::handle_uinput_event()
                                 std::cerr << "Failed to get uinput_ff_erase: " << strerror(errno) << std::endl;
 
                             erase.retval = 0;
-                            if (ioctl(physl->get_fd(), EVIOCRMFF, erase.effect_id) == -1)
-                                erase.retval = errno;
-                            if (ioctl(physr->get_fd(), EVIOCRMFF, erase.effect_id) == -1)
-                                erase.retval = errno;
+                            if (physl) {
+                                if (ioctl(physl->get_fd(), EVIOCRMFF, erase.effect_id) == -1)
+                                    erase.retval = errno;
+                            }
+                            if (physr) {
+                                if (ioctl(physr->get_fd(), EVIOCRMFF, erase.effect_id) == -1)
+                                    erase.retval = errno;
+                            }
 
                             if (erase.retval)
                                 std::cerr << "UI_FF_ERASE failed: " << strerror(erase.retval) << std::endl;
@@ -133,7 +146,11 @@ void virt_ctlr_combined::handle_uinput_event()
 virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::shared_ptr<phys_ctlr> physr, epoll_mgr& epoll_manager) :
     physl(physl),
     physr(physr),
-    epoll_manager(epoll_manager)
+    epoll_manager(epoll_manager),
+    subscriber(nullptr),
+    virt_evdev(nullptr),
+    uidev(nullptr),
+    uifd(-1)
 {
     int ret;
 
@@ -143,11 +160,56 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
         exit(1);
     }
 
-    char *tmp = strdup(libevdev_get_name(physl->get_evdev()));
-    libevdev_set_name(physl->get_evdev(), "Nintendo Switch Combined Joy-Cons");
-    ret = libevdev_uinput_create_from_device(physl->get_evdev(), uifd, &uidev);
-    libevdev_set_name(physl->get_evdev(), tmp);
-    free(tmp);
+    // Create a virtual evdev on which the uinput will be based
+    virt_evdev = libevdev_new();
+    if (!virt_evdev) {
+        std::cerr << "Failed to create virtual evdev\n";
+        exit(1);
+    }
+
+    libevdev_set_name(virt_evdev, "Nintendo Switch Combined Joy-Cons");
+
+    // Make sure that all of this configuration remains in sync with the hid-nintendo driver.
+    libevdev_enable_event_type(virt_evdev, EV_KEY);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_SELECT, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_Z, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_THUMBL, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_START, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_MODE, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_THUMBR, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_SOUTH, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_EAST, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_NORTH, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_WEST, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_DPAD_UP, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_DPAD_DOWN, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_DPAD_LEFT, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_DPAD_RIGHT, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TL, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TR, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TL2, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TR2, NULL);
+
+    struct input_absinfo absconfig = { 0 };
+    absconfig.minimum = -32767;
+    absconfig.maximum = 32767;
+    absconfig.fuzz = 250;
+    absconfig.flat = 500;
+    libevdev_enable_event_type(virt_evdev, EV_ABS);
+    libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_X, &absconfig);
+    libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_Y, &absconfig);
+    libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_RX, &absconfig);
+    libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_RY, &absconfig);
+
+    libevdev_enable_event_type(virt_evdev, EV_FF);
+    libevdev_enable_event_code(virt_evdev, EV_FF, FF_RUMBLE, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_FF, FF_PERIODIC, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_FF, FF_SQUARE, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_FF, FF_TRIANGLE, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_FF, FF_SINE, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_FF, FF_GAIN, NULL);
+
+    ret = libevdev_uinput_create_from_device(virt_evdev, LIBEVDEV_UINPUT_OPEN_MANAGED, &uidev);
     if (ret) {
         std::cerr << "Failed to create libevdev_uinput; " << ret << std::endl;
         exit(1);
@@ -167,13 +229,14 @@ virt_ctlr_combined::~virt_ctlr_combined()
 
     libevdev_uinput_destroy(uidev);
     close(uifd);
+    libevdev_free(virt_evdev);
 }
 
 void virt_ctlr_combined::handle_events(int fd)
 {
-    if (fd == physl->get_fd())
+    if (physl && fd == physl->get_fd())
         relay_events(physl);
-    else if (fd == physr->get_fd())
+    else if (physr && fd == physr->get_fd())
         relay_events(physr);
     else if (fd == get_uinput_fd())
         handle_uinput_event();
@@ -188,21 +251,70 @@ bool virt_ctlr_combined::contains_phys_ctlr(std::shared_ptr<phys_ctlr> const ctl
 
 bool virt_ctlr_combined::contains_phys_ctlr(char const *devpath) const
 {
-    return physl->get_devpath() == devpath || physr->get_devpath() == devpath;
+    return (physl && physl->get_devpath() == devpath) || (physr && physr->get_devpath() == devpath);
 }
 
 bool virt_ctlr_combined::contains_fd(int fd) const
 {
-    return physl->get_fd() == fd || physr->get_fd() == fd || libevdev_uinput_get_fd(uidev) == fd;
+    return (physl && physl->get_fd() == fd) || (physr && physr->get_fd() == fd) ||
+            libevdev_uinput_get_fd(uidev) == fd;
 }
 
 std::vector<std::shared_ptr<phys_ctlr>> virt_ctlr_combined::get_phys_ctlrs()
 {
-    std::vector<std::shared_ptr<phys_ctlr>> ctlrs = { physl, physr };
+    std::vector<std::shared_ptr<phys_ctlr>> ctlrs;
+    if (physl)
+        ctlrs.push_back(physl);
+    if (physr)
+        ctlrs.push_back(physr);
     return ctlrs;
 }
 
 int virt_ctlr_combined::get_uinput_fd()
 {
     return libevdev_uinput_get_fd(uidev);
+}
+
+void virt_ctlr_combined::remove_phys_ctlr(const std::shared_ptr<phys_ctlr> phys)
+{
+    if (phys == physl) {
+        std::cout << "Removing left joy-con from virtual combined controller\n";
+        physl = nullptr;
+    } else if (phys == physr) {
+        std::cout << "Removing right joy-con from virtual combined controller\n";
+        physr = nullptr;
+    } else {
+        std::cerr << "ERROR: Attempted to remove non-existant controller from combined joy-cons\n";
+        exit(EXIT_FAILURE);
+    }
+}
+
+void virt_ctlr_combined::add_phys_ctlr(std::shared_ptr<phys_ctlr> phys)
+{
+    if (phys->get_model() == phys_ctlr::Model::Left_Joycon && !physl) {
+        std::cout << "Re-adding left joy-con to virtual combined controller\n";
+        physl = phys;
+    } else if (phys->get_model() == phys_ctlr::Model::Right_Joycon && !physr) {
+        std::cout << "Re-adding right joy-con to virtual combined controller\n";
+        physr = phys;
+    } else {
+        std::cerr << "ERROR: Attempted to add invalid controller to combined joy-cons\n";
+        exit(EXIT_FAILURE);
+    }
+}
+
+enum phys_ctlr::Model virt_ctlr_combined::needs_model()
+{
+    enum phys_ctlr::Model model = phys_ctlr::Model::Unknown;
+
+    if (!physl)
+        model = phys_ctlr::Model::Left_Joycon;
+    else if (!physr)
+        model = phys_ctlr::Model::Right_Joycon;
+    return model;
+}
+
+bool virt_ctlr_combined::no_ctlrs_left()
+{
+    return !physl && !physr;
 }

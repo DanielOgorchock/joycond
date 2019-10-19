@@ -19,6 +19,13 @@ class virt_ctlr
         virtual bool contains_phys_ctlr(char const *devpath) const = 0;
         virtual bool contains_fd(int fd) const = 0;
         virtual std::vector<std::shared_ptr<phys_ctlr>> get_phys_ctlrs() = 0;
+        virtual void remove_phys_ctlr(const std::shared_ptr<phys_ctlr> phys) = 0;
+        virtual void add_phys_ctlr(std::shared_ptr<phys_ctlr> phys) = 0;
+        virtual enum phys_ctlr::Model needs_model() = 0;
+        virtual bool supports_hotplug() {return false;}
+
+        // Used to determine if this virtual controller should be removed from paired controllers list
+        virtual bool no_ctlrs_left() {return true;}
 };
 
 #endif

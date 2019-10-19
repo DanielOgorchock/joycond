@@ -46,3 +46,20 @@ std::vector<std::shared_ptr<phys_ctlr>> virt_ctlr_passthrough::get_phys_ctlrs()
     std::vector<std::shared_ptr<phys_ctlr>> ctlrs = { phys };
     return ctlrs;
 }
+
+void virt_ctlr_passthrough::remove_phys_ctlr(const std::shared_ptr<phys_ctlr> phys)
+{
+    std::cerr << "ERROR: Cannot remove phys_ctlr from a passthrough controller\n";
+    exit(EXIT_FAILURE);
+}
+
+void virt_ctlr_passthrough::add_phys_ctlr(std::shared_ptr<phys_ctlr> phys)
+{
+    std::cerr << "ERROR: Cannot add phys_ctlr to a passthrough controller\n";
+    exit(EXIT_FAILURE);
+}
+
+enum phys_ctlr::Model virt_ctlr_passthrough::needs_model()
+{
+    return phys_ctlr::Model::Unknown;
+}

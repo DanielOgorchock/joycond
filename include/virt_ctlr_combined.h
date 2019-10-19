@@ -15,6 +15,7 @@ class virt_ctlr_combined : public virt_ctlr
         std::shared_ptr<phys_ctlr> physr;
         epoll_mgr& epoll_manager;
         std::shared_ptr<epoll_subscriber> subscriber;
+        struct libevdev *virt_evdev;
         struct libevdev_uinput *uidev;
         int uifd;
 
@@ -30,6 +31,11 @@ class virt_ctlr_combined : public virt_ctlr
         virtual bool contains_fd(int fd) const;
         virtual std::vector<std::shared_ptr<phys_ctlr>> get_phys_ctlrs();
         virtual int get_uinput_fd();
+        virtual void remove_phys_ctlr(const std::shared_ptr<phys_ctlr> phys);
+        virtual void add_phys_ctlr(std::shared_ptr<phys_ctlr> phys);
+        virtual enum phys_ctlr::Model needs_model();
+        virtual bool supports_hotplug() {return true;}
+        virtual bool no_ctlrs_left();
 };
 
 #endif
