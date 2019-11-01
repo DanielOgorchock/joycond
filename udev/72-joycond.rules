@@ -1,8 +1,8 @@
 ACTION!="add", GOTO="joycond_end"
 SUBSYSTEM!="input", GOTO="joycond_end"
 KERNEL!="event*", GOTO="joycond_end"
-KERNELS=="*057E:2009*", TAG-="uaccess"
-KERNELS=="*057E:2006*", TAG-="uaccess"
-KERNELS=="*057E:2007*", TAG-="uaccess"
+ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2009", ATTRS{name}!="*Combined*", TAG-="uaccess"
+ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2006", ATTRS{name}!="*Combined*", TAG-="uaccess"
+ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2007", ATTRS{name}!="*Combined*", TAG-="uaccess"
 
 LABEL="joycond_end"
