@@ -142,8 +142,6 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
         subscribers[devpath] = std::make_shared<epoll_subscriber>(std::vector({phys->get_fd()}),
                                                 [=](int event_fd){epoll_event_callback(event_fd);});
         epoll_manager.add_subscriber(subscribers[devpath]);
-        // check if we're already ready to pair this contoller
-        epoll_event_callback(phys->get_fd());
     } else {
         std::cerr << "Attempting to add existing phys_ctlr to controller manager\n";
         return;
@@ -165,6 +163,9 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
             unpaired_controllers.erase(phys->get_devpath());
         }
     }
+        // check if we're already ready to pair this contoller
+        if (unpaired_controllers.count(devpath))
+            epoll_event_callback(unpaired_controllers[devpath]->get_fd());
 }
 
 void ctlr_mgr::remove_ctlr(const std::string& devpath)
