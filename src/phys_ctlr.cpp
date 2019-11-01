@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <glob.h>
+#include <string>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -163,7 +164,8 @@ void phys_ctlr::handle_event(struct input_event const &ev)
 phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
     devpath(devpath),
     devname(devname),
-    evdev(nullptr)
+    evdev(nullptr),
+    is_serial(false)
 {
     init_leds();
 
@@ -200,6 +202,15 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
     grab();
     if (fchmod(get_fd(), S_IRUSR | S_IWUSR))
         std::cerr << "Failed to change evdev permissions; " << strerror(errno) << std::endl;
+
+    // Check if this is a serial joy-con
+    std::ifstream fname(devpath + "/name");
+    std::string driver_name;
+    fname >> driver_name;
+    if (driver_name.find("Serial") != std::string::npos) {
+        std::cout << "Serial joy-con detected\n";
+        is_serial = true;
+    }
 }
 
 phys_ctlr::~phys_ctlr()
@@ -298,6 +309,10 @@ void phys_ctlr::handle_events()
 enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
 {
     enum phys_ctlr::PairingState state = PairingState::Pairing;
+
+    // uart joy-cons should just always be willing to pair
+    if (is_serial)
+        return PairingState::Waiting;
 
     switch (model) {
         case Model::Procon:

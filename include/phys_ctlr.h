@@ -16,6 +16,7 @@ class phys_ctlr
         std::string devpath;
         std::string devname;
         struct libevdev *evdev;
+        bool is_serial;
         std::fstream player_leds[4];
         std::fstream player_led_triggers[4];
         std::fstream home_led;
