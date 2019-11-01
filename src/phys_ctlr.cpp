@@ -204,9 +204,10 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
         std::cerr << "Failed to change evdev permissions; " << strerror(errno) << std::endl;
 
     // Check if this is a serial joy-con
-    std::ifstream fname(devpath + "/name");
+    std::ifstream fname("/sys/" + devpath + "/../name");
     std::string driver_name;
-    fname >> driver_name;
+    std::getline(fname, driver_name);
+    std::cout << "driver_name: " << driver_name << std::endl;
     if (driver_name.find("Serial") != std::string::npos) {
         std::cout << "Serial joy-con detected\n";
         is_serial = true;
