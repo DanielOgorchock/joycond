@@ -163,9 +163,9 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
             unpaired_controllers.erase(phys->get_devpath());
         }
     }
-        // check if we're already ready to pair this contoller
-        if (unpaired_controllers.count(devpath))
-            epoll_event_callback(unpaired_controllers[devpath]->get_fd());
+    // check if we're already ready to pair this contoller
+    if (unpaired_controllers.count(devpath))
+        epoll_event_callback(unpaired_controllers[devpath]->get_fd());
 }
 
 void ctlr_mgr::remove_ctlr(const std::string& devpath)
