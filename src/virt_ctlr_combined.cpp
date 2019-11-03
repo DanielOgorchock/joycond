@@ -26,11 +26,13 @@ void virt_ctlr_combined::relay_events(std::shared_ptr<phys_ctlr> phys)
                 ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_SYNC, &ev);
             }
         } else if (ret == LIBEVDEV_READ_STATUS_SUCCESS) {
-            /* First filter out the SL and SR buttons on each physical controller */
+            /* First remap the SL and SR buttons on each physical controller */
             if (phys == physl && ev.type == EV_KEY && (ev.code == BTN_TR || ev.code == BTN_TR2)) {
+                libevdev_uinput_write_event(uidev, ev.type, ev.code == BTN_TR ? BTN_0 : BTN_1, ev.value);
                 ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
                 continue;
             } else if (phys == physr && ev.type == EV_KEY && (ev.code == BTN_TL || ev.code == BTN_TL2)) {
+                libevdev_uinput_write_event(uidev, ev.type, ev.code == BTN_TL ? BTN_2: BTN_3, ev.value);
                 ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
                 continue;
             }
@@ -216,6 +218,11 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TR, NULL);
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TL2, NULL);
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TR2, NULL);
+    // Map the S triggers to these misc. buttons
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_0, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_1, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_2, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_3, NULL);
 
     struct input_absinfo absconfig = { 0 };
     absconfig.minimum = -32767;
