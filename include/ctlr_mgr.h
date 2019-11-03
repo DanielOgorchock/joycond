@@ -17,6 +17,7 @@ class ctlr_mgr
         std::map<std::string, std::shared_ptr<phys_ctlr>> unpaired_controllers;
         std::map<std::string, std::shared_ptr<epoll_subscriber>> subscribers;
         std::vector<std::unique_ptr<virt_ctlr>> paired_controllers;
+        std::vector<std::unique_ptr<virt_ctlr>> stale_controllers;
 
         std::shared_ptr<phys_ctlr> left;
         std::shared_ptr<phys_ctlr> right;

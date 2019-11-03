@@ -20,6 +20,8 @@ class virt_ctlr_combined : public virt_ctlr
         struct libevdev_uinput *uidev;
         int uifd;
         std::map<int, std::pair<struct ff_effect, struct ff_effect>> rumble_effects;
+        std::string left_mac;
+        std::string right_mac;
 
         void relay_events(std::shared_ptr<phys_ctlr> phys);
         void handle_uinput_event();
@@ -38,6 +40,7 @@ class virt_ctlr_combined : public virt_ctlr
         virtual enum phys_ctlr::Model needs_model();
         virtual bool supports_hotplug() {return true;}
         virtual bool no_ctlrs_left();
+        virtual bool mac_belongs(const std::string& mac) const;
 };
 
 #endif

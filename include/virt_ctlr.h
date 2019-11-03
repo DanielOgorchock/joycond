@@ -23,6 +23,7 @@ class virt_ctlr
         virtual void add_phys_ctlr(std::shared_ptr<phys_ctlr> phys) = 0;
         virtual enum phys_ctlr::Model needs_model() = 0;
         virtual bool supports_hotplug() {return false;}
+        virtual bool mac_belongs(const std::string& mac) const {return false;}
 
         // Used to determine if this virtual controller should be removed from paired controllers list
         virtual bool no_ctlrs_left() {return true;}

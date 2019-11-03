@@ -175,7 +175,9 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
     virt_evdev(nullptr),
     uidev(nullptr),
     uifd(-1),
-    rumble_effects()
+    rumble_effects(),
+    left_mac(physl->get_mac_addr()),
+    right_mac(physr->get_mac_addr())
 {
     int ret;
 
@@ -329,9 +331,11 @@ void virt_ctlr_combined::add_phys_ctlr(std::shared_ptr<phys_ctlr> phys)
     if (phys->get_model() == phys_ctlr::Model::Left_Joycon && !physl) {
         std::cout << "Re-adding left joy-con to virtual combined controller\n";
         physl = phys;
+        left_mac = phys->get_mac_addr();
     } else if (phys->get_model() == phys_ctlr::Model::Right_Joycon && !physr) {
         std::cout << "Re-adding right joy-con to virtual combined controller\n";
         physr = phys;
+        right_mac = phys->get_mac_addr();
     } else {
         std::cerr << "ERROR: Attempted to add invalid controller to combined joy-cons\n";
         exit(EXIT_FAILURE);
@@ -367,3 +371,9 @@ bool virt_ctlr_combined::no_ctlrs_left()
 {
     return !physl && !physr;
 }
+
+bool virt_ctlr_combined::mac_belongs(const std::string& mac) const
+{
+    return mac != "" && (mac == left_mac || mac == right_mac);
+}
+

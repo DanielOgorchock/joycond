@@ -146,6 +146,30 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
         return;
     }
 
+    // See if this controller belongs to a "stale" controller
+    for (unsigned int i = 0; i < stale_controllers.size(); i++) {
+        auto& virt = stale_controllers[i];
+
+        if (!virt)
+            continue;
+
+        if (virt->mac_belongs(phys->get_mac_addr())) {
+            bool found_slot = false;
+            std::cout << "Re-pairing stale controller\n";
+            for (unsigned int i = 0; i < paired_controllers.size(); i++) {
+                if (!paired_controllers[i]) {
+                    found_slot = true;
+                    paired_controllers[i] = std::move(virt);
+                    break;
+                }
+            }
+            if (!found_slot)
+                paired_controllers.push_back(std::move(virt));
+            stale_controllers.erase(stale_controllers.begin() + i);
+            break;
+        }
+    }
+
     // Check if a controller with this MAC already exists in a combined controller
     for (unsigned int i = 0; i < paired_controllers.size(); i++) {
         auto& virt = paired_controllers[i];
@@ -218,11 +242,18 @@ void ctlr_mgr::remove_ctlr(const std::string& devpath)
         bool found = false;
         for (auto phys : ctlr->get_phys_ctlrs()) {
             if (phys->get_devpath() == devpath) {
+                bool serial = phys->is_serial_ctlr();
+
                 if (ctlr->supports_hotplug())
                     ctlr->remove_phys_ctlr(phys);
 
                 if (ctlr->no_ctlrs_left()) {
-                    std::cout << "unpairing controller\n";
+                    if (serial) {
+                        std::cout << "Both serial joy-cons disconnected; keep ctlr alive\n";
+                        stale_controllers.push_back(std::move(ctlr));
+                    } else {
+                        std::cout << "unpairing controller\n";
+                    }
                     ctlr = nullptr;
                 }
 

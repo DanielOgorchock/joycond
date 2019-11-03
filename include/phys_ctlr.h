@@ -48,6 +48,7 @@ class phys_ctlr
         struct libevdev *get_evdev() { return evdev; }
         void zero_triggers();
         const std::string& get_mac_addr() { return mac_addr; }
+        bool is_serial_ctlr() const { return is_serial; }
 };
 
 #endif
