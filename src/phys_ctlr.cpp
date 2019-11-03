@@ -212,6 +212,12 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
         std::cout << "Serial joy-con detected\n";
         is_serial = true;
     }
+
+    // Attempt to read MAC address from uniq attribute
+    mac_addr = "";
+    std::ifstream funiq("/sys/" + devpath + "/../uniq");
+    std::getline(funiq, mac_addr);
+    std::cout << "MAC: " << mac_addr << std::endl;
 }
 
 phys_ctlr::~phys_ctlr()

@@ -147,6 +147,29 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
         return;
     }
 
+    // Check if a controller with this MAC already exists in a combined controller
+    for (unsigned int i = 0; i < paired_controllers.size(); i++) {
+        auto& virt = paired_controllers[i];
+
+        if (!virt)
+            continue;
+
+        if (virt->supports_hotplug()) {
+            bool found;
+            for (auto phys2 : virt->get_phys_ctlrs()) {
+                if (phys->get_mac_addr() == phys2->get_mac_addr() && phys->get_mac_addr() != "") {
+                    std::cout << "Replacing controller (likely a BT to serial switch)\n";
+                    virt->remove_phys_ctlr(phys2);
+                    virt->add_phys_ctlr(phys);
+                    found = true;
+                    break;
+                }
+            }
+            if (found)
+                break;
+        }
+    }
+
     // Now check if this is a reconnecting joy-con
     for (unsigned int i = 0; i < paired_controllers.size(); i++) {
         auto& virt = paired_controllers[i];

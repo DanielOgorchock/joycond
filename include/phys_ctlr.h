@@ -22,6 +22,7 @@ class phys_ctlr
         std::fstream home_led;
         bool l, zl, r, zr, sl, sr;
         enum Model model;
+        std::string mac_addr;
 
         std::optional<std::string> get_first_glob_path(std::string const &pattern);
         std::optional<std::string> get_led_path(std::string const &name);
@@ -46,6 +47,7 @@ class phys_ctlr
         void ungrab() { libevdev_grab(evdev, LIBEVDEV_UNGRAB); }
         struct libevdev *get_evdev() { return evdev; }
         void zero_triggers();
+        const std::string& get_mac_addr() { return mac_addr; }
 };
 
 #endif
