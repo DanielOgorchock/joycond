@@ -207,8 +207,8 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
         if (!virt)
             continue;
 
-        if (virt->needs_model() == phys->get_model() && phys->get_model() != phys_ctlr::Model::Unknown &&
-                virt->supports_hotplug()) {
+        if (((virt->needs_model() == phys->get_model() && phys->get_model() != phys_ctlr::Model::Unknown)
+            || virt->no_ctlrs_left()) && virt->supports_hotplug()) {
             std::cout << "Detected reconnected joy-con\n";
             phys->set_all_player_leds(false);
             phys->set_player_leds_to_player(i % 4 + 1);
