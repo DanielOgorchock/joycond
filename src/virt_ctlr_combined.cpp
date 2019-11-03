@@ -246,6 +246,10 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
         exit(1);
     }
 
+    // Allow other processes to use the virtual evdev.
+    if (fchmod(libevdev_get_fd(virt_evdev), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH))
+        std::cerr << "Failed to change evdev permissions; " << strerror(errno) << std::endl;
+
     int flags = fcntl(get_uinput_fd(), F_GETFL, 0);
     fcntl(get_uinput_fd(), F_SETFL, flags | O_NONBLOCK);
 
