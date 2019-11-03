@@ -135,7 +135,6 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
 
     if (!unpaired_controllers.count(devpath)) {
         std::cout << "Creating new phys_ctlr for " << devname << std::endl;
-        sleep(1); // wait for led_classdevs to be created by driver (This is hacky, I know)
         phys.reset(new phys_ctlr(devpath, devname));
         unpaired_controllers[devpath] = phys;
         phys->blink_player_leds();

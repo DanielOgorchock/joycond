@@ -33,59 +33,100 @@ std::optional<std::string> phys_ctlr::get_led_path(std::string const &name)
 
 void phys_ctlr::init_leds()
 {
-    auto tmp = get_led_path("player1");
-    if (tmp.has_value()) {
-        player_leds[0].open(tmp.value() + "/brightness");
-        if (!player_leds[0].is_open()) {
-            std::cerr << "Failed to open player1 led brightness\n";
+    std::optional<std::string> tmp;
+    for (unsigned int i = 0; i < 100; i++) {
+        tmp = get_led_path("player1");
+        if (tmp.has_value()) {
+            player_leds[0].open(tmp.value() + "/brightness");
+            if (!player_leds[0].is_open()) {
+                std::cerr << "Failed to open player1 led brightness\n";
+                usleep(10);
+                continue;
+            }
+            player_led_triggers[0].open(tmp.value() + "/trigger");
+            if (!player_led_triggers[0].is_open()) {
+                std::cerr << "Failed to open player1 trigger\n";
+                usleep(10);
+                continue;
+            }
+            break;
         }
-        player_led_triggers[0].open(tmp.value() + "/trigger");
-        if (!player_led_triggers[0].is_open()) {
-            std::cerr << "Failed to open player1 trigger\n";
-        }
+        usleep(10);
     }
 
-    tmp = get_led_path("player2");
-    if (tmp.has_value()) {
-        player_leds[1].open(tmp.value() + "/brightness");
-        if (!player_leds[1].is_open()) {
-            std::cerr << "Failed to open player2 led brightness\n";
+    for (unsigned int i = 0; i < 100; i++) {
+        tmp = get_led_path("player2");
+        if (tmp.has_value()) {
+            player_leds[1].open(tmp.value() + "/brightness");
+            if (!player_leds[1].is_open()) {
+                std::cerr << "Failed to open player2 led brightness\n";
+                usleep(10);
+                continue;
+            }
+            player_led_triggers[1].open(tmp.value() + "/trigger");
+            if (!player_led_triggers[1].is_open()) {
+                std::cerr << "Failed to open player2 trigger\n";
+                usleep(10);
+                continue;
+            }
+            break;
         }
-        player_led_triggers[1].open(tmp.value() + "/trigger");
-        if (!player_led_triggers[1].is_open()) {
-            std::cerr << "Failed to open player2 trigger\n";
-        }
+        usleep(10);
     }
 
-    tmp = get_led_path("player3");
-    if (tmp.has_value()) {
-        player_leds[2].open(tmp.value() + "/brightness");
-        if (!player_leds[2].is_open()) {
-            std::cerr << "Failed to open player3 led brightness\n";
+    for (unsigned int i = 0; i < 100; i++) {
+        tmp = get_led_path("player3");
+        if (tmp.has_value()) {
+            player_leds[2].open(tmp.value() + "/brightness");
+            if (!player_leds[2].is_open()) {
+                std::cerr << "Failed to open player3 led brightness\n";
+                usleep(10);
+                continue;
+            }
+            player_led_triggers[2].open(tmp.value() + "/trigger");
+            if (!player_led_triggers[2].is_open()) {
+                std::cerr << "Failed to open player3 trigger\n";
+                usleep(10);
+                continue;
+            }
+            break;
         }
-        player_led_triggers[2].open(tmp.value() + "/trigger");
-        if (!player_led_triggers[2].is_open()) {
-            std::cerr << "Failed to open player3 trigger\n";
-        }
+        usleep(10);
     }
 
-    tmp = get_led_path("player4");
-    if (tmp.has_value()) {
-        player_leds[3].open(tmp.value() + "/brightness");
-        if (!player_leds[3].is_open()) {
-            std::cerr << "Failed to open player4 led brightness\n";
+    for (unsigned int i = 0; i < 100; i++) {
+        tmp = get_led_path("player4");
+        if (tmp.has_value()) {
+            player_leds[3].open(tmp.value() + "/brightness");
+            if (!player_leds[3].is_open()) {
+                std::cerr << "Failed to open player4 led brightness\n";
+                usleep(10);
+                continue;
+            }
+            player_led_triggers[3].open(tmp.value() + "/trigger");
+            if (!player_led_triggers[3].is_open()) {
+                std::cerr << "Failed to open player4 trigger\n";
+                usleep(10);
+                continue;
+            }
+            break;
         }
-        player_led_triggers[3].open(tmp.value() + "/trigger");
-        if (!player_led_triggers[3].is_open()) {
-            std::cerr << "Failed to open player4 trigger\n";
-        }
+        usleep(10);
     }
 
-    tmp = get_led_path("home");
-    if (tmp.has_value()) {
-        home_led.open(tmp.value() + "/brightness");
-        if (!home_led.is_open()) {
-            std::cerr << "Failed to open home led brightness\n";
+    if (model != Model::Left_Joycon) {
+        for (unsigned int i = 0; i < 100; i++) {
+            tmp = get_led_path("home");
+            if (tmp.has_value()) {
+                home_led.open(tmp.value() + "/brightness");
+                if (!home_led.is_open()) {
+                    std::cerr << "Failed to open home led brightness\n";
+                    usleep(10);
+                    continue;
+                }
+                break;
+            }
+            usleep(10);
         }
     }
 
