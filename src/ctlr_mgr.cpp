@@ -159,6 +159,10 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
             for (auto phys2 : virt->get_phys_ctlrs()) {
                 if (phys->get_mac_addr() == phys2->get_mac_addr() && phys->get_mac_addr() != "") {
                     std::cout << "Replacing controller (likely a BT to serial switch)\n";
+                    if (subscribers.count(phys2->get_devpath())) {
+                        epoll_manager.remove_subscriber(subscribers[phys2->get_devpath()]);
+                        subscribers.erase(phys2->get_devpath());
+                    }
                     virt->remove_phys_ctlr(phys2);
                     phys->set_all_player_leds(false);
                     phys->set_player_leds_to_player(i % 4 + 1);
