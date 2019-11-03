@@ -160,7 +160,10 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
                 if (phys->get_mac_addr() == phys2->get_mac_addr() && phys->get_mac_addr() != "") {
                     std::cout << "Replacing controller (likely a BT to serial switch)\n";
                     virt->remove_phys_ctlr(phys2);
+                    phys->set_all_player_leds(false);
+                    phys->set_player_leds_to_player(i % 4 + 1);
                     virt->add_phys_ctlr(phys);
+                    unpaired_controllers.erase(phys->get_devpath());
                     found = true;
                     break;
                 }
