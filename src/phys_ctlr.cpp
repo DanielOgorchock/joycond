@@ -208,7 +208,6 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
     evdev(nullptr),
     is_serial(false)
 {
-    init_leds();
 
     int fd = open(devname.c_str(), O_RDWR | O_NONBLOCK);
     if (fd < 0) {
@@ -238,6 +237,8 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
             std::cerr << "Unknown product id = " << std::hex << libevdev_get_id_product(evdev) << std::endl;
             break;
     }
+
+    init_leds();
 
     // Prevent other users from having access to the evdev until it's paired
     grab();
