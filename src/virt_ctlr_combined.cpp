@@ -245,7 +245,7 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
 
     // Set the product information to a left joy-con's product info (but with virtual bus type)
     libevdev_set_id_vendor(virt_evdev, 0x57e);
-    libevdev_set_id_product(virt_evdev, 0x2006);
+    libevdev_set_id_product(virt_evdev, 0x2008); // HACK?
     libevdev_set_id_bustype(virt_evdev, BUS_VIRTUAL);
     libevdev_set_id_version(virt_evdev, 0x0000);
 
