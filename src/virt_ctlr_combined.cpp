@@ -184,7 +184,7 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
     int ret;
 
     uifd = open("/dev/uinput", O_RDWR);
-    if (uidev < 0) {
+    if (uifd < 0) {
         std::cerr << "Failed to open uinput; errno=" << errno << std::endl;
         exit(1);
     }
