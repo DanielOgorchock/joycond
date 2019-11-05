@@ -65,7 +65,7 @@ void epoll_mgr::remove_subscriber(std::shared_ptr<epoll_subscriber> sub)
 }
 
 static const int MAX_EVENTS = 10;
-static const int TIMEOUT = 50;
+static const int TIMEOUT = 500;
 void epoll_mgr::loop()
 {
     struct epoll_event events[MAX_EVENTS];

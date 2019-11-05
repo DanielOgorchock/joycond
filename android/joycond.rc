@@ -1,0 +1,4 @@
+service joycond /vendor/bin/joycond
+    class hal
+    user system
+    group system
