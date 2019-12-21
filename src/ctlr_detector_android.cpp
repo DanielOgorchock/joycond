@@ -86,12 +86,12 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
         return;
     }
 
-    libevdev_free(evdev);
-    close(fd);
-
     int pid = libevdev_get_id_product(evdev);
     int vid = libevdev_get_id_vendor(evdev);
 
+    libevdev_free(evdev);
+    close(fd);
+    
     std::cout << "Input device connected vid: 0x" << std::hex << vid <<  " pid: 0x" << std::hex << pid << std::endl;
     if (vid != 0x57e)
         return;
