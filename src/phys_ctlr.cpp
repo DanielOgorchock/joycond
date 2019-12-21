@@ -359,6 +359,12 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
 {
     enum phys_ctlr::PairingState state = PairingState::Pairing;
 
+    // leds don't function on android joycons so no way of the user knowing the pair state
+#if defined(ANDROID) || defined(__ANDROID__)
+    if (model != Model::Procon)
+        return PairingState::Waiting;
+#endif
+
     // uart joy-cons should just always be willing to pair
     if (is_serial)
         return PairingState::Waiting;
