@@ -4,5 +4,6 @@ KERNEL!="event*", GOTO="joycond_end"
 ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2009", ATTRS{name}!="*Combined*", TAG+="joycond", MODE="0600"
 ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2006", ATTRS{name}!="*Combined*", TAG+="joycond", MODE="0600"
 ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2007", ATTRS{name}!="*Combined*", TAG+="joycond", MODE="0600"
+ATTRS{id/vendor}=="057e", ATTRS{id/product}=="200e", ATTRS{name}!="*Combined*", TAG+="joycond", MODE="0600"
 
 LABEL="joycond_end", ATTRS{capabilities/ff}=="0", TAG-="joycond"

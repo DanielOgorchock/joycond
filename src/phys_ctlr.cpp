@@ -219,7 +219,17 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
         exit(1);
     }
 
-    switch (libevdev_get_id_product(evdev)) {
+    int product_id = libevdev_get_id_product(evdev);
+    // Extra checks are required for charging grip
+    if (product_id == 0x200e) {
+        std::cout << "Found Charging Grip Joy-Con...\n";
+        if (libevdev_has_event_code(evdev, EV_KEY, BTN_TL))
+            product_id = 0x2006;
+        else
+            product_id = 0x2007;
+    }
+
+    switch (product_id) {
         case 0x2009:
             model = Model::Procon;
             std::cout << "Found Pro Controller\n";
@@ -364,6 +374,9 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
     if (model != Model::Procon)
         return PairingState::Waiting;
 #endif
+
+    if (libevdev_get_id_product(evdev) == 0x200e)
+        return PairingState::Waiting;
 
     // uart joy-cons should just always be willing to pair
     if (is_serial)
