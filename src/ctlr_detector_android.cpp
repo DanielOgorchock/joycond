@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <netlink/msg.h>
@@ -78,7 +79,7 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
     int fd = open(devname.c_str(), O_RDWR | O_NONBLOCK);
     if (fd < 0) {
         std::cerr << "Failed to open " << devname << " ; errno=" << errno << std::endl;
-        exit(1);
+        return;
     }
     if (libevdev_new_from_fd(fd, &evdev)) {
         std::cerr << "Failed to create evdev from fd\n";
@@ -109,6 +110,50 @@ ctlr_detector_android::ctlr_detector_android(ctlr_mgr& ctlr_manager, epoll_mgr& 
 {
     struct sockaddr_nl uevent_socket;
     struct pollfd uevent_pollfd;
+    struct dirent *event_dirent;
+    std::string event_path;
+    std::string sysfs_event_path;
+    DIR *input_dir;
+
+    input_dir = opendir("/dev/input/");
+
+    while ((event_dirent = readdir(input_dir)) != NULL) {
+        if (event_dirent->d_type & DT_DIR)
+            continue;
+
+        event_path = "/dev/input/" + std::string(event_dirent->d_name);
+        sysfs_event_path = "/sys/class/input/" + std::string(event_dirent->d_name) + "/device";
+  
+        // Open device to confirm the vendor and product id
+        int fd = open(event_path.c_str(), O_RDWR | O_NONBLOCK);
+        if (fd < 0) {
+            std::cerr << "Failed to open " << event_path << "; errno=" << errno << std::endl;
+            continue;
+        }
+
+        struct libevdev *evdev;
+        if (libevdev_new_from_fd(fd, &evdev)) {
+            std::cerr << "Failed to create evdev from fd\n";
+            close(fd);
+            continue;
+        }
+
+        int pid = libevdev_get_id_product(evdev);
+        int vid = libevdev_get_id_vendor(evdev);
+
+        libevdev_free(evdev);
+        close(fd);
+
+        std::cout << "Input device connected vid: 0x" << std::hex << vid <<  " pid: 0x" << std::hex << pid << std::endl;
+        if (vid != 0x57e)
+            continue;
+
+        if (pid != 0x2009 && pid != 0x2007 && pid != 0x2006)
+            continue;
+
+        ctlr_manager.add_ctlr(sysfs_event_path, event_path);
+    }
+
     // Open hotplug event netlink socket
     memset(&uevent_socket,0,sizeof(struct sockaddr_nl));
     uevent_socket.nl_family = AF_NETLINK;
