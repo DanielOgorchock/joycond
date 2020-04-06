@@ -1,6 +1,12 @@
 ACTION!="add", GOTO="joycond_end"
 SUBSYSTEM!="input", GOTO="joycond_end"
 KERNEL!="event*", GOTO="joycond_end"
+
+ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2009", ATTRS{name}=="*IMU", TAG+="uaccess" 
+ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2006", ATTRS{name}=="*IMU", TAG+="uaccess" 
+ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2007", ATTRS{name}=="*IMU", TAG+="uaccess" 
+ATTRS{id/vendor}=="057e", ATTRS{id/product}=="200e", ATTRS{name}=="*IMU", TAG+="uaccess" 
+
 ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2009", ATTRS{name}!="*Combined*", ATTRS{capabilities/ff}!="0", TAG-="uaccess"
 ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2006", ATTRS{name}!="*Combined*", ATTRS{capabilities/ff}!="0", TAG-="uaccess"
 ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2007", ATTRS{name}!="*Combined*", ATTRS{capabilities/ff}!="0", TAG-="uaccess"
