@@ -11,8 +11,11 @@ class ctlr_detector_android
         epoll_mgr& epoll_manager;
         std::shared_ptr<epoll_subscriber> subscriber;
 
-        void epoll_event_callback(int event_fd);
+        std::map<std::string, std::string> ctlr_dev_map;
 
+        bool check_ctlr_attributes(std::string devpath);
+        void scan_removed_ctlrs();
+        void epoll_event_callback(int event_fd);
     public:
         ctlr_detector_android(ctlr_mgr& ctlr_manager, epoll_mgr& epoll_manager );
         ~ctlr_detector_android();
