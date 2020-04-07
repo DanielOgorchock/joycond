@@ -14,9 +14,14 @@ LOCAL_SRC_FILES := \
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 
-LOCAL_SHARED_LIBRARIES := libevdev \
+LOCAL_SHARED_LIBRARIES := \
+    libevdev \
     libnl \
     liblog
+
+LOCAL_REQUIRED_MODULES := \
+    Vendor_057e_Product_2008.idc \
+    Vendor_057e_Product_2008.kl
 
 LOCAL_MODULE := joycond
 LOCAL_INIT_RC := android/joycond.rc
@@ -25,3 +30,21 @@ LOCAL_CPPFLAGS := -std=c++17 -Wno-error -fexceptions
 LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_OWNER := nintendo
 include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := Vendor_057e_Product_2008.kl
+LOCAL_SRC_FILES := android/Vendor_057e_Product_2008.kl
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/usr/keylayout
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_OWNER := nintendo
+include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := Vendor_057e_Product_2008.idc
+LOCAL_SRC_FILES := android/Vendor_057e_Product_2008.idc
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/usr/idc
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_OWNER := nintendo
+include $(BUILD_PREBUILT)

@@ -1,0 +1,23 @@
+key 309   BACK
+key 314   BUTTON_SELECT
+key 318   BUTTON_THUMBR
+key 317   BUTTON_THUMBL
+key 304   BUTTON_A
+key 305   BUTTON_B
+key 308   BUTTON_X
+key 307   BUTTON_Y
+key 310   BUTTON_L1
+key 311   BUTTON_R1
+key 312   BUTTON_L2
+key 313   BUTTON_R2
+key 315   BUTTON_START
+key 316   HOME
+key 544   DPAD_UP
+key 545   DPAD_DOWN
+key 546   DPAD_LEFT
+key 547   DPAD_RIGHT
+
+axis 0x00 X
+axis 0x01 Y
+axis 0x03 Z
+axis 0x04 RZ
