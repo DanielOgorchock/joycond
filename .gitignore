@@ -7,3 +7,4 @@ joycond
 install_manifest.txt
 .ccls-cache
 build
+compile_commands.json

@@ -3,6 +3,9 @@ project(joycond)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Generate compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
 find_package(PkgConfig)
 pkg_check_modules(LIBEVDEV REQUIRED libevdev)
 pkg_check_modules(LIBUDEV REQUIRED libudev)
