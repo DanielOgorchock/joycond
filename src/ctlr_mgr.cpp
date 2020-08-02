@@ -5,6 +5,10 @@
 #include <iostream>
 #include <unistd.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+
 //private
 void ctlr_mgr::epoll_event_callback(int event_fd)
 {
@@ -135,6 +139,28 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
 
     if (!unpaired_controllers.count(devpath)) {
         std::cout << "Creating new phys_ctlr for " << devname << std::endl;
+        
+        char hidraw_path[200];
+        DIR *d;
+        dirent *dir;
+        snprintf(hidraw_path, sizeof hidraw_path, "%s%s%s", "/sys", devpath.c_str(), "/../../../hidraw/");
+        d = opendir(hidraw_path);
+        while ((dir = readdir(d))) {
+            if (dir->d_name[0] != '.') {
+                break;
+            }
+        }
+        if (dir != NULL) {
+            char hidraw_path_num[200];
+            //gcc is stupid sometimes
+            snprintf(hidraw_path_num, sizeof hidraw_path_num, "%s%s%s", hidraw_path, dir->d_name, "/.")  < 0 ? abort() : (void)0;
+            if (! chmod(hidraw_path_num, strtol("0600", 0 , 8))) {
+                printf("chmod failed");
+            }
+        } else {
+            printf("hidraw path not found");
+        }
+
         phys.reset(new phys_ctlr(devpath, devname));
         unpaired_controllers[devpath] = phys;
         phys->blink_player_leds();
