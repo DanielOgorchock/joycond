@@ -13,6 +13,12 @@ void ctlr_mgr::epoll_event_callback(int event_fd)
         if (event_fd == ctlr->get_fd()) {
             ctlr->handle_events();
             switch (ctlr->get_pairing_state()) {
+                case phys_ctlr::PairingState::Pairing:
+                    if (ctlr->get_model() == phys_ctlr::Model::Procon) {
+                        std::cout << "Lone controller paired\n";
+                        add_passthrough_ctlr(ctlr);
+                        break;
+                    }
                 case phys_ctlr::PairingState::Lone:
                     std::cout << "Lone controller paired\n";
                     add_passthrough_ctlr(ctlr);
