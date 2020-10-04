@@ -28,23 +28,27 @@ bool ctlr_detector_android::check_ctlr_attributes(std::string devpath)
     }
 
     if (libevdev_new_from_fd(fd, &evdev)) {
-        std::cerr << "Failed to create evdev from fd\n";
+        std::cerr << "Failed to create evdev from fd" << devpath << "\n";
         close(fd);
         return false;
     }
 
     int pid = libevdev_get_id_product(evdev);
     int vid = libevdev_get_id_vendor(evdev);
+    int is_accel = libevdev_has_property(evdev, INPUT_PROP_ACCELEROMETER);
 
     libevdev_free(evdev);
     close(fd);
 
-    std::cout << "Input device connected vid: 0x" << std::hex << vid << " pid: 0x" << std::hex << pid << std::endl;
+    std::cout << "Input device connected vid: 0x" << std::hex << vid << " pid: 0x" << std::hex << pid << " accel: " << is_accel << std::endl;
 
     if (vid != 0x57e)
         return false;
 
-    if (pid != 0x2007 && pid != 0x2006)
+    if (pid != 0x2009 && pid != 0x2007 && pid != 0x2006)
+        return false;
+
+    if (is_accel)
         return false;
 
     return true;
@@ -81,9 +85,7 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
     bool action = false;
     bool correct = false;
 
-    // On Android Bluetooth disconnect only results in a hidraw disconnect event so use that
-    // to remove controllers.
-    bool hidraw_remove = false;
+    scan_removed_ctlrs();
 
     while (pos < event_len) {
         std::istringstream iss(&buf[pos]);
@@ -99,8 +101,7 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
             }
 
             if (key == "SUBSYSTEM") {
-                correct = ((val == "input") || (val == "hidraw")) && correct;
-                hidraw_remove = (val == "hidraw");
+                correct = (val == "input") && correct;
             }
 
             if (key == "DEVPATH")
@@ -125,18 +126,15 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
     usleep(100000);
 
     if (!action) {
-        if (hidraw_remove) {
-            scan_removed_ctlrs();
-        } else {
-            ctlr_dev_map.erase(devnode);
-            ctlr_manager.remove_ctlr(devpath);
-        }
-
+        ctlr_dev_map.erase(devnode);
+        std::cout << "Remove controller from map: " << devpath << std::endl;
+        ctlr_manager.remove_ctlr(devpath);
         return;
     }
 
     if (check_ctlr_attributes(devnode)) {
         ctlr_manager.add_ctlr(devpath, devnode);
+        std::cout << "Add controller to map: " << devpath << std::endl;
         ctlr_dev_map.insert({devpath, devnode});
     }
 }
@@ -164,6 +162,7 @@ ctlr_detector_android::ctlr_detector_android(ctlr_mgr& ctlr_manager, epoll_mgr& 
   
         if (check_ctlr_attributes(event_path)) {
             ctlr_manager.add_ctlr(sysfs_event_path, event_path);
+            std::cout << "Add controller to map: " << sysfs_event_path << std::endl;
             ctlr_dev_map.insert({sysfs_event_path, event_path});
         }
     }
