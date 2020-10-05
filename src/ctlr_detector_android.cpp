@@ -59,7 +59,7 @@ void ctlr_detector_android::scan_removed_ctlrs() {
     // Scan all controllers we think are connected to double check they actually are, removing if needed
 
     for (auto ctlr : ctlr_dev_map) {
-        if (access(ctlr.second.c_str(), F_OK) != -1) {
+        if (access(ctlr.second.c_str(), F_OK)) {
             // Controller has been disconnected, it's event file is missing
             ctlr_manager.remove_ctlr(ctlr.first);
             ctlr_dev_map.erase(ctlr.first);
