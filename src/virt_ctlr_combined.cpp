@@ -31,12 +31,12 @@ void virt_ctlr_combined::relay_events(std::shared_ptr<phys_ctlr> phys)
             /* First remap the SL and SR buttons on each physical controller */
             if (phys == physl && ev.type == EV_KEY && (ev.code == BTN_TR || ev.code == BTN_TR2)) {
                 if (!is_serial)
-                    libevdev_uinput_write_event(uidev, ev.type, ev.code == BTN_TR ? BTN_0 : BTN_1, ev.value);
+                    libevdev_uinput_write_event(uidev, ev.type, ev.code == BTN_TR ? BTN_TRIGGER_HAPPY1 : BTN_TRIGGER_HAPPY2, ev.value);
                 ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
                 continue;
             } else if (phys == physr && ev.type == EV_KEY && (ev.code == BTN_TL || ev.code == BTN_TL2)) {
                 if (!is_serial)
-                    libevdev_uinput_write_event(uidev, ev.type, ev.code == BTN_TL ? BTN_2: BTN_3, ev.value);
+                    libevdev_uinput_write_event(uidev, ev.type, ev.code == BTN_TL ? BTN_TRIGGER_HAPPY3 : BTN_TRIGGER_HAPPY4, ev.value);
                 ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
                 continue;
             }
@@ -225,10 +225,10 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
 
     // Map the S triggers to these misc. buttons if not connected via serial.
     if (!physl->is_serial_ctlr() && !physr->is_serial_ctlr()) {
-        libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_0, NULL);
-        libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_1, NULL);
-        libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_2, NULL);
-        libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_3, NULL);
+        libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TRIGGER_HAPPY1, NULL);
+        libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TRIGGER_HAPPY2, NULL);
+        libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TRIGGER_HAPPY3, NULL);
+        libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TRIGGER_HAPPY4, NULL);
     }
 
     struct input_absinfo absconfig = { 0 };
