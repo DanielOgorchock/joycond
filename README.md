@@ -4,9 +4,10 @@ hid-nintendo is currently in review on the linux-input mailing list. The most re
 
 # Installation
 1. clone the repo
-2. `cmake .`
-3. `sudo make install`
-4. `sudo systemctl enable --now joycond`
+2. Install libevdev-dev if you haven't already (`sudo apt install libevdev-dev`)
+3. `cmake .`
+4. `sudo make install`
+5. `sudo systemctl enable --now joycond`
 
 # Usage
 When a joy-con or pro controller is connected via bluetooth or USB, the player LEDs should start blinking periodically. This signals that the controller is in pairing mode.
