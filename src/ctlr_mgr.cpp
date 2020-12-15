@@ -72,7 +72,6 @@ void ctlr_mgr::add_passthrough_ctlr(std::shared_ptr<phys_ctlr> phys)
     for (unsigned int i = 0; i < paired_controllers.size(); i++) {
         if (!paired_controllers[i]) {
             found_slot = true;
-            phys->set_all_player_leds(false);
             phys->set_player_leds_to_player(i % 4 + 1);
             paired_controllers[i] = std::move(passthrough);
             break;
@@ -104,9 +103,7 @@ void ctlr_mgr::add_combined_ctlr()
         }
     }
     if (!found_slot) {
-        left->set_all_player_leds(false);
         left->set_player_leds_to_player(paired_controllers.size() % 4 + 1);
-        right->set_all_player_leds(false);
         right->set_player_leds_to_player(paired_controllers.size() % 4 + 1);
         paired_controllers.push_back(std::move(combined));
     }
@@ -187,7 +184,6 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
                         subscribers.erase(phys2->get_devpath());
                     }
                     virt->remove_phys_ctlr(phys2);
-                    phys->set_all_player_leds(false);
                     phys->set_player_leds_to_player(i % 4 + 1);
                     virt->add_phys_ctlr(phys);
                     unpaired_controllers.erase(phys->get_devpath());
@@ -210,7 +206,6 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
         if (((virt->needs_model() == phys->get_model() && phys->get_model() != phys_ctlr::Model::Unknown)
             || virt->no_ctlrs_left()) && virt->supports_hotplug()) {
             std::cout << "Detected reconnected joy-con\n";
-            phys->set_all_player_leds(false);
             phys->set_player_leds_to_player(i % 4 + 1);
             virt->add_phys_ctlr(phys);
             unpaired_controllers.erase(phys->get_devpath());
