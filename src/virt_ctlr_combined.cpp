@@ -40,6 +40,19 @@ void virt_ctlr_combined::relay_events(std::shared_ptr<phys_ctlr> phys)
                 ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
                 continue;
             }
+
+#if defined(ANDROID) || defined(__ANDROID__)
+            /* Second remap the ZL and ZR buttons to analog trigger on android */
+            if (phys == physl && ev.type == EV_KEY && ev.code == BTN_TL2) {
+                libevdev_uinput_write_event(uidev, EV_ABS, ABS_Z, ev.value);
+                ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
+                continue;
+            } else if (phys == physr && ev.type == EV_KEY && ev.code == BTN_TR2) {
+                libevdev_uinput_write_event(uidev, EV_ABS, ABS_RZ, ev.value);
+                ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
+                continue;
+            }
+#endif
             libevdev_uinput_write_event(uidev, ev.type, ev.code, ev.value);
         }
         ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
@@ -220,8 +233,10 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_DPAD_RIGHT, NULL);
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TL, NULL);
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TR, NULL);
+#if !defined(ANDROID) && !defined(__ANDROID__)
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TL2, NULL);
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TR2, NULL);
+#endif
 
     // Map the S triggers to these misc. buttons if not connected via serial.
     if (!physl->is_serial_ctlr() && !physr->is_serial_ctlr()) {
@@ -242,6 +257,17 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
     libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_RX, &absconfig);
     libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_RY, &absconfig);
 
+    // Emulate analog triggers for android
+#if defined(ANDROID) || defined(__ANDROID__)
+    struct input_absinfo absconfig_fake = { 0 };
+    absconfig_fake.minimum = 0;
+    absconfig_fake.maximum = 1;
+    absconfig_fake.fuzz = 0;
+    absconfig_fake.flat = 0;
+
+    libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_Z, &absconfig_fake);
+    libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_RZ, &absconfig_fake);
+#endif
     libevdev_enable_event_type(virt_evdev, EV_FF);
     libevdev_enable_event_code(virt_evdev, EV_FF, FF_RUMBLE, NULL);
     libevdev_enable_event_code(virt_evdev, EV_FF, FF_PERIODIC, NULL);
