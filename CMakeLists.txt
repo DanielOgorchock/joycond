@@ -25,7 +25,7 @@ target_link_libraries(
 
 add_subdirectory(src)
 
-install(FILES joycond DESTINATION /usr/bin/
+install(TARGETS joycond DESTINATION /usr/bin/
         PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         )
 install(FILES udev/89-joycond.rules udev/72-joycond.rules DESTINATION /lib/udev/rules.d/
