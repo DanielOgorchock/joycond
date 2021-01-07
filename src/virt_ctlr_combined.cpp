@@ -282,6 +282,13 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
     libevdev_set_id_bustype(virt_evdev, BUS_VIRTUAL);
     libevdev_set_id_version(virt_evdev, 0x0000);
 
+    // Enable LED events
+    libevdev_enable_event_type(virt_evdev, EV_LED);
+    libevdev_enable_event_code(virt_evdev, EV_LED, 0, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_LED, 1, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_LED, 2, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_LED, 3, NULL);
+
     ret = libevdev_uinput_create_from_device(virt_evdev, LIBEVDEV_UINPUT_OPEN_MANAGED, &uidev);
     if (ret) {
         std::cerr << "Failed to create libevdev_uinput; " << ret << std::endl;
@@ -413,3 +420,15 @@ bool virt_ctlr_combined::mac_belongs(const std::string& mac) const
     return mac != "" && (mac == left_mac || mac == right_mac);
 }
 
+bool virt_ctlr_combined::set_player_leds_to_player(int player)
+{
+    if (player < 1 || player > 4) {
+        std::cerr << player << " is not a valid player led value\n";
+        return false;
+    }
+
+    for (int i = 0; i < player; i++) {
+        libevdev_uinput_write_event(uidev, EV_LED, 0, LIBEVDEV_LED_ON);
+    }
+    return true;
+}
