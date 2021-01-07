@@ -425,7 +425,7 @@ bool virt_ctlr_combined::set_player_led(int index, bool on)
     if (index > 3)
         return false;
 
-    libevdev_uinput_write_event(uidev, EV_LED, 0, on ? LIBEVDEV_LED_ON : LIBEVDEV_LED_OFF);
+    libevdev_uinput_write_event(uidev, EV_LED, index, on);
     return true;
 }
 
