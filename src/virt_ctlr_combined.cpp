@@ -420,6 +420,24 @@ bool virt_ctlr_combined::mac_belongs(const std::string& mac) const
     return mac != "" && (mac == left_mac || mac == right_mac);
 }
 
+bool virt_ctlr_combined::set_player_led(int index, bool on)
+{
+    if (index > 3)
+        return false;
+
+    libevdev_uinput_write_event(uidev, EV_LED, 0, on ? LIBEVDEV_LED_ON : LIBEVDEV_LED_OFF);
+    return true;
+}
+
+bool virt_ctlr_combined::set_all_player_leds(bool on)
+{
+    for (int i = 0; i < 4; i++) {
+        if (!set_player_led(i, on))
+            return false;
+    }
+    return true;
+}
+
 bool virt_ctlr_combined::set_player_leds_to_player(int player)
 {
     if (player < 1 || player > 4) {
@@ -427,8 +445,9 @@ bool virt_ctlr_combined::set_player_leds_to_player(int player)
         return false;
     }
 
+    set_all_player_leds(false);
     for (int i = 0; i < player; i++) {
-        libevdev_uinput_write_event(uidev, EV_LED, 0, LIBEVDEV_LED_ON);
+        set_player_led(i, true);
     }
     return true;
 }

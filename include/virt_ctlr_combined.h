@@ -41,6 +41,8 @@ class virt_ctlr_combined : public virt_ctlr
         virtual bool supports_hotplug() {return true;}
         virtual bool no_ctlrs_left();
         virtual bool mac_belongs(const std::string& mac) const;
+        virtual bool set_player_led(int index, bool on);
+        virtual bool set_all_player_leds(bool on);
         virtual bool set_player_leds_to_player(int player);
 };
 
