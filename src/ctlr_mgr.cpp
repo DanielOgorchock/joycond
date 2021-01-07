@@ -98,7 +98,7 @@ void ctlr_mgr::add_combined_ctlr()
             found_slot = true;
             left->set_player_leds_to_player(i % 4 + 1);
             right->set_player_leds_to_player(i % 4 + 1);
-            combined->set_player_leds_to_player(paired_controllers.size() % 4 + 1);
+            combined->set_player_leds_to_player(i % 4 + 1);
             paired_controllers[i] = std::move(combined);
             break;
         }
@@ -262,4 +262,3 @@ void ctlr_mgr::remove_ctlr(const std::string& devpath)
             break;
     }
 }
-
