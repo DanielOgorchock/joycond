@@ -173,6 +173,9 @@ void virt_ctlr_combined::handle_uinput_event()
                 }
                 break;
 
+            case EV_LED:
+                break;
+
             default:
                 std::cerr << "Unhandled uinput type=" << ev.type << std::endl;
                 break;
