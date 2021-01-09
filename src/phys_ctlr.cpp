@@ -143,6 +143,7 @@ void phys_ctlr::handle_event(struct input_event const &ev)
 
     switch (model) {
         case Model::Procon:
+        case Model::Snescon:
             switch (code) {
                 case BTN_TL:
                     l = val;
@@ -241,6 +242,10 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
         case 0x2007:
             model = Model::Right_Joycon;
             std::cout << "Found Right Joy-Con\n";
+            break;
+        case 0x2017:
+            model = Model::Snescon;
+            std::cout << "Found SNES Controller\n";
             break;
         default:
             model = Model::Unknown;
@@ -371,7 +376,7 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
 
     // leds don't function on android joycons so no way of the user knowing the pair state
 #if defined(ANDROID) || defined(__ANDROID__)
-    if (model != Model::Procon)
+    if (model != Model::Procon && model != Model::Snescon)
         return PairingState::Waiting;
 #endif
 
@@ -384,6 +389,7 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
 
     switch (model) {
         case Model::Procon:
+        case Model::Snescon:
             if ((l | zl) && (r | zr))
                 state = PairingState::Lone;
             break;

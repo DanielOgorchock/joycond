@@ -9,7 +9,7 @@
 class phys_ctlr
 {
     public:
-        enum class Model { Procon, Left_Joycon, Right_Joycon, Unknown };
+        enum class Model { Procon, Snescon, Left_Joycon, Right_Joycon, Unknown };
         enum class PairingState { Pairing, Lone, Waiting, Horizontal };
 
     private:

@@ -45,7 +45,7 @@ bool ctlr_detector_android::check_ctlr_attributes(std::string devpath)
     if (vid != 0x57e)
         return false;
 
-    if (pid != 0x2009 && pid != 0x2007 && pid != 0x2006)
+    if (pid != 0x2009 && pid != 0x2007 && pid != 0x2006 && pid != 0x2017)
         return false;
 
     if (is_accel)
