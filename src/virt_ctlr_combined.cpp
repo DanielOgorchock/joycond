@@ -174,6 +174,9 @@ void virt_ctlr_combined::handle_uinput_event()
                 break;
 
             case EV_LED:
+                if (ev.value == 0) {
+                    libevdev_uinput_write_event(uidev, EV_LED, ev.code, !ev.value);
+                }
                 break;
 
             default:
@@ -448,7 +451,6 @@ bool virt_ctlr_combined::set_player_leds_to_player(int player)
         return false;
     }
 
-    set_all_player_leds(false);
     for (int i = 0; i < player; i++) {
         set_player_led(i, true);
     }
