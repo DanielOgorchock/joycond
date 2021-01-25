@@ -48,3 +48,21 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/usr/idc
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_OWNER := nintendo
 include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := Vendor_057e_Product_2009.kl
+LOCAL_SRC_FILES := android/Vendor_057e_Product_2008.kl
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/usr/keylayout
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_OWNER := nintendo
+include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := Vendor_057e_Product_2009.idc
+LOCAL_SRC_FILES := android/Vendor_057e_Product_2008.idc
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/usr/idc
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_OWNER := nintendo
+include $(BUILD_PREBUILT)

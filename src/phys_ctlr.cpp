@@ -373,6 +373,8 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
 #if defined(ANDROID) || defined(__ANDROID__)
     if (model != Model::Procon)
         return PairingState::Waiting;
+	else
+        return PairingState::Lone;
 #endif
 
     if (libevdev_get_id_product(evdev) == 0x200e)
