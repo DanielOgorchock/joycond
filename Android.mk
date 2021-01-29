@@ -21,7 +21,9 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_REQUIRED_MODULES := \
     Vendor_057e_Product_2008.idc \
-    Vendor_057e_Product_2008.kl
+    Vendor_057e_Product_2008.kl  \
+    Vendor_057e_Product_2009_Version_8001.idc \
+    Vendor_057e_Product_2009_Version_8001.kl
 
 LOCAL_MODULE := joycond
 LOCAL_INIT_RC := android/joycond.rc
@@ -50,7 +52,7 @@ LOCAL_MODULE_OWNER := nintendo
 include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := Vendor_057e_Product_2009.kl
+LOCAL_MODULE := Vendor_057e_Product_2009_Version_8001.kl
 LOCAL_SRC_FILES := android/Vendor_057e_Product_2008.kl
 LOCAL_MODULE_CLASS := ETC
 LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/usr/keylayout
@@ -59,7 +61,7 @@ LOCAL_MODULE_OWNER := nintendo
 include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := Vendor_057e_Product_2009.idc
+LOCAL_MODULE := Vendor_057e_Product_2009_Version_8001.idc
 LOCAL_SRC_FILES := android/Vendor_057e_Product_2008.idc
 LOCAL_MODULE_CLASS := ETC
 LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/usr/idc
