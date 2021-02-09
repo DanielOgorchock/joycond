@@ -28,7 +28,12 @@ std::optional<std::string> phys_ctlr::get_first_glob_path(std::string const &pat
 
 std::optional<std::string> phys_ctlr::get_led_path(std::string const &name)
 {
+    // Android links sysfs differently
+#if defined(ANDROID) || defined(__ANDROID__)
+    return get_first_glob_path(std::string("/sys/") + devpath + "/device/leds/*" + name);
+#else
     return get_first_glob_path(std::string("/sys/") + devpath + "/device/device/leds/*" + name);
+#endif
 }
 
 void phys_ctlr::init_leds()
@@ -256,18 +261,28 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
         std::cerr << "Failed to change evdev permissions; " << strerror(errno) << std::endl;
 
     // Check if this is a serial joy-con
+#if defined(ANDROID) || defined(__ANDROID__)
+    std::ifstream fname("/sys/" + devpath + "/name");
+#else
     std::ifstream fname("/sys/" + devpath + "/../name");
+#endif
     std::string driver_name;
     std::getline(fname, driver_name);
     std::cout << "driver_name: " << driver_name << std::endl;
     if (driver_name.find("Serial") != std::string::npos) {
         std::cout << "Serial joy-con detected\n";
+        // Turn off player LEDs by default with serial joycons by default
+        set_all_player_leds(false);
         is_serial = true;
     }
 
     // Attempt to read MAC address from uniq attribute
     mac_addr = "";
-    std::ifstream funiq("/sys/" + devpath + "/../uniq");
+#if defined(ANDROID) || defined(__ANDROID__)
+    std::ifstream funiq("/sys/" + devpath + "/uniq");
+#else
+     std::ifstream funiq("/sys/" + devpath + "/../uniq");
+#endif
     std::getline(funiq, mac_addr);
     std::cout << "MAC: " << mac_addr << std::endl;
 }
@@ -283,7 +298,7 @@ phys_ctlr::~phys_ctlr()
 
 bool phys_ctlr::set_player_led(int index, bool on)
 {
-    if (index > 3 || !player_leds[index].is_open())
+    if (index > 3 || !player_leds[index].is_open() || is_serial)
         return false;
 
     player_leds[index] << (on ? '1' : '0');
@@ -373,7 +388,7 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
 #if defined(ANDROID) || defined(__ANDROID__)
     if (model != Model::Procon)
         return PairingState::Waiting;
-	else
+    else
         return PairingState::Lone;
 #endif
 
