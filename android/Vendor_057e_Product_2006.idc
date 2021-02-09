@@ -1,0 +1,1 @@
+device.disabled=1
