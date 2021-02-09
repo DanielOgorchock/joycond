@@ -20,6 +20,8 @@ LOCAL_SHARED_LIBRARIES := \
     liblog
 
 LOCAL_REQUIRED_MODULES := \
+    Vendor_057e_Product_2006.idc \
+    Vendor_057e_Product_2007.idc \
     Vendor_057e_Product_2008.idc \
     Vendor_057e_Product_2008.kl  \
     Vendor_057e_Product_2009_Version_8001.idc \
@@ -32,6 +34,24 @@ LOCAL_CPPFLAGS := -std=c++17 -Wno-error -fexceptions
 LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_OWNER := nintendo
 include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := Vendor_057e_Product_2007.idc
+LOCAL_SRC_FILES := android/Vendor_057e_Product_2006.idc
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/usr/idc
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_OWNER := nintendo
+include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := Vendor_057e_Product_2006.idc
+LOCAL_SRC_FILES := android/Vendor_057e_Product_2006.idc
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/usr/idc
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_OWNER := nintendo
+include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := Vendor_057e_Product_2008.kl
