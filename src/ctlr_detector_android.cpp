@@ -120,7 +120,7 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
     if (devpath.empty() || devnode.empty() || ((devnode.find("event") == std::string::npos) && (devnode.find("hid") == std::string::npos)))
         return;
 
-    devpath = "/class/input/" + std::string(basename(devnode.c_str())) + "/device/device";
+    devpath = "/class/input/" + std::string(basename(devnode.c_str())) + "/device";
 
     // Sleep a bit to let driver load
     usleep(100000);
@@ -158,7 +158,7 @@ ctlr_detector_android::ctlr_detector_android(ctlr_mgr& ctlr_manager, epoll_mgr& 
             continue;
 
         event_path = "/dev/input/" + std::string(event_dirent->d_name);
-        sysfs_event_path = "/class/input/" + std::string(event_dirent->d_name) + "/device/device";
+        sysfs_event_path = "/class/input/" + std::string(event_dirent->d_name) + "/device";
   
         if (check_ctlr_attributes(event_path)) {
             ctlr_manager.add_ctlr(sysfs_event_path, event_path);
