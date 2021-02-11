@@ -79,7 +79,7 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
 
     event_msg = { &event_sockaddr, sizeof(event_sockaddr), &event_iovec, 1, NULL, 0, 0 };
     event_len = recvmsg(event_fd, &event_msg, 0);
-   
+
     std::string devpath, devnode, key, val;
 
     bool action = false;
@@ -115,7 +115,7 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
 
     if (!correct)
         return;
- 
+
     // Only accept event* devices and complete requests
     if (devpath.empty() || devnode.empty() || ((devnode.find("event") == std::string::npos) && (devnode.find("hid") == std::string::npos)))
         return;
@@ -124,6 +124,17 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
 
     // Sleep a bit to let driver load
     usleep(100000);
+
+    // Check the MAC to handle replacements - disconnects are not reported instantly so otherwise we can end up desynced
+    std::ifstream funiq("/sys/" + devpath + "/uniq");
+    std::string mac_addr = "";
+    std::getline(funiq, mac_addr);
+
+    if (ctlr_mac_map.count(mac_addr)) {
+        // Remove old controller
+        ctlr_manager.remove_ctlr(ctlr_dev_map[ctlr_mac_map[mac_addr]]);
+        ctlr_dev_map.erase(ctlr_mac_map[mac_addr]);
+    }
 
     if (!action) {
         ctlr_dev_map.erase(devnode);
@@ -136,6 +147,7 @@ void ctlr_detector_android::epoll_event_callback(int event_fd)
         ctlr_manager.add_ctlr(devpath, devnode);
         std::cout << "Add controller to map: " << devpath << std::endl;
         ctlr_dev_map.insert({devpath, devnode});
+        ctlr_mac_map.insert({mac_addr, devpath});
     }
 }
 
@@ -159,11 +171,17 @@ ctlr_detector_android::ctlr_detector_android(ctlr_mgr& ctlr_manager, epoll_mgr& 
 
         event_path = "/dev/input/" + std::string(event_dirent->d_name);
         sysfs_event_path = "/class/input/" + std::string(event_dirent->d_name) + "/device";
-  
+
         if (check_ctlr_attributes(event_path)) {
             ctlr_manager.add_ctlr(sysfs_event_path, event_path);
+
+            std::ifstream funiq("/sys/" + sysfs_event_path + "/uniq");
+            std::string mac_addr = "";
+            std::getline(funiq, mac_addr);
+
             std::cout << "Add controller to map: " << sysfs_event_path << std::endl;
             ctlr_dev_map.insert({sysfs_event_path, event_path});
+            ctlr_mac_map.insert({mac_addr, sysfs_event_path});
         }
     }
 
