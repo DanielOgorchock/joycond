@@ -12,6 +12,7 @@ class ctlr_detector_android
         std::shared_ptr<epoll_subscriber> subscriber;
 
         std::map<std::string, std::string> ctlr_dev_map;
+        std::map<std::string, std::string> ctlr_mac_map;
 
         bool check_ctlr_attributes(std::string devpath);
         void scan_removed_ctlrs();
