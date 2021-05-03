@@ -42,10 +42,10 @@ bool ctlr_detector_android::check_ctlr_attributes(std::string devpath)
 
     std::cout << "Input device connected vid: 0x" << std::hex << vid << " pid: 0x" << std::hex << pid << " accel: " << is_accel << std::endl;
 
-    if (vid != 0x57e)
+    if (vid != 0x0f0d && vid != 0x057e)
         return false;
 
-    if (pid != 0x2009 && pid != 0x2007 && pid != 0x2006 && pid != 0x2017)
+    if (pid != 0x00f6 && pid != 0x2009 && pid != 0x2007 && pid != 0x2006 && pid != 0x2017)
         return false;
 
     if (is_accel)
