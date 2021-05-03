@@ -236,6 +236,10 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
     }
 
     switch (product_id) {
+        case 0x00f6:
+            model = Model::Procon;
+            std::cout << "Found Licensed Pro Controller\n";
+            break;
         case 0x2009:
             model = Model::Procon;
             std::cout << "Found Pro Controller\n";
