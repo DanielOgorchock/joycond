@@ -1,6 +1,7 @@
 #include "ctlr_mgr.h"
 #include "virt_ctlr_passthrough.h"
 #include "virt_ctlr_combined.h"
+#include "virt_ctlr_pro.h"
 
 #include <iostream>
 #include <unistd.h>
@@ -16,6 +17,10 @@ void ctlr_mgr::epoll_event_callback(int event_fd)
                 case phys_ctlr::PairingState::Lone:
                     std::cout << "Lone controller paired\n";
                     add_passthrough_ctlr(ctlr);
+                    break;
+                case phys_ctlr::PairingState::Virt_Procon:
+                    std::cout << "Virtual procon paired\n";
+                    add_virt_procon_ctlr(ctlr);
                     break;
                 case phys_ctlr::PairingState::Waiting:
                     std::cout << "Waiting controller needs partner\n";
@@ -112,6 +117,31 @@ void ctlr_mgr::add_combined_ctlr()
 
     unpaired_controllers.erase(left->get_devpath());
     unpaired_controllers.erase(right->get_devpath());
+}
+
+void ctlr_mgr::add_virt_procon_ctlr(std::shared_ptr<phys_ctlr> phys)
+{
+    std::unique_ptr<virt_ctlr_pro> procon(new virt_ctlr_pro(phys, epoll_manager));
+
+    std::cout << "Creating virtual pro controller input\n";
+
+    bool found_slot = false;
+    for (unsigned int i = 0; i < paired_controllers.size(); i++) {
+        if (!paired_controllers[i]) {
+            found_slot = true;
+            phys->set_player_leds_to_player(i % 4 + 1);
+            procon->set_player_leds_to_player(i % 4 + 1);
+            paired_controllers[i] = std::move(procon);
+            break;
+        }
+    }
+    if (!found_slot) {
+        phys->set_player_leds_to_player(paired_controllers.size() % 4 + 1);
+        procon->set_player_leds_to_player(paired_controllers.size() % 4 + 1);
+        paired_controllers.push_back(std::move(procon));
+    }
+
+    unpaired_controllers.erase(phys->get_devpath());
 }
 
 //public

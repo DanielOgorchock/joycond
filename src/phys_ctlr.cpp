@@ -162,6 +162,12 @@ void phys_ctlr::handle_event(struct input_event const &ev)
                 case BTN_TR2:
                     zr = val;
                     break;
+                case BTN_START:
+                    plus = val;
+                    break;
+                case BTN_SELECT:
+                    minus = val;
+                    break;
                 default:
                     break;
             }
@@ -214,6 +220,8 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
     evdev(nullptr),
     is_serial(false)
 {
+
+    zero_triggers();
 
     int fd = open(devname.c_str(), O_RDWR | O_NONBLOCK);
     if (fd < 0) {
@@ -409,6 +417,8 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
         case Model::Snescon:
             if ((l | zl) && (r | zr))
                 state = PairingState::Lone;
+            else if (plus && minus)
+                state = PairingState::Virt_Procon;
             break;
         case Model::Left_Joycon:
             if (l ^ zl)
@@ -434,5 +444,5 @@ enum phys_ctlr::PairingState phys_ctlr::get_pairing_state() const
 
 void phys_ctlr::zero_triggers()
 {
-    l = zl = r = zr = sl = sr = 0;
+    l = zl = r = zr = sl = sr = plus = minus = 0;
 }
