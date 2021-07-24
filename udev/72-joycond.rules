@@ -1,6 +1,3 @@
-# disable hidraw access to keep steam in check
-SUBSYSTEM=="hidraw", ATTRS{idVendor}=="057e", ATTRS{idProduct}=="2009", TAG-="uaccess"
-
 ACTION!="add", GOTO="joycond_end"
 SUBSYSTEM!="input", GOTO="joycond_end"
 KERNEL!="event*", GOTO="joycond_end"
