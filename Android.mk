@@ -10,6 +10,7 @@ LOCAL_SRC_FILES := \
     src/virt_ctlr.cpp \
     src/virt_ctlr_combined.cpp \
     src/virt_ctlr_passthrough.cpp \
+    src/virt_ctlr_pro.cpp \
     src/main.cpp
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
