@@ -40,7 +40,7 @@ void phys_ctlr::init_leds()
 {
     std::optional<std::string> tmp;
     for (unsigned int i = 0; i < 100; i++) {
-        tmp = get_led_path("player1");
+        tmp = get_led_path("player*1");
         if (tmp.has_value()) {
             player_leds[0].open(tmp.value() + "/brightness");
             if (!player_leds[0].is_open()) {
@@ -60,7 +60,7 @@ void phys_ctlr::init_leds()
     }
 
     for (unsigned int i = 0; i < 100; i++) {
-        tmp = get_led_path("player2");
+        tmp = get_led_path("player*2");
         if (tmp.has_value()) {
             player_leds[1].open(tmp.value() + "/brightness");
             if (!player_leds[1].is_open()) {
@@ -80,7 +80,7 @@ void phys_ctlr::init_leds()
     }
 
     for (unsigned int i = 0; i < 100; i++) {
-        tmp = get_led_path("player3");
+        tmp = get_led_path("player*3");
         if (tmp.has_value()) {
             player_leds[2].open(tmp.value() + "/brightness");
             if (!player_leds[2].is_open()) {
@@ -100,7 +100,7 @@ void phys_ctlr::init_leds()
     }
 
     for (unsigned int i = 0; i < 100; i++) {
-        tmp = get_led_path("player4");
+        tmp = get_led_path("player*4");
         if (tmp.has_value()) {
             player_leds[3].open(tmp.value() + "/brightness");
             if (!player_leds[3].is_open()) {
@@ -121,7 +121,10 @@ void phys_ctlr::init_leds()
 
     if (model != Model::Left_Joycon) {
         for (unsigned int i = 0; i < 100; i++) {
-            tmp = get_led_path("home");
+            tmp = get_led_path("player*5");
+            if (!tmp.has_value()) {
+                tmp = get_led_path("home");
+            }
             if (tmp.has_value()) {
                 home_led.open(tmp.value() + "/brightness");
                 if (!home_led.is_open()) {
