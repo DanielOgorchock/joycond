@@ -3,11 +3,18 @@ joycond is a linux daemon which uses the evdev devices provided by hid-nintendo 
 hid-nintendo is currently in review on the linux-input mailing list. The most recent patches are currently found at https://github.com/DanielOgorchock/linux
 
 # Installation
-1. clone the repo
-2. Install requirements (`sudo apt install libevdev-dev` or `sudo dnf install libevdev-devel libudev-devel`)
-3. `cmake .`
-4. `sudo make install`
-5. `sudo systemctl enable --now joycond`
+
+```
+git clone https://github.com/DanielOgorchock/joycond.git
+cd joycond
+# cmake and pkg-config may already be installed on your system
+sudo apt install cmake pkg-config
+sudo apt install libevdev-dev libudev-dev
+# OR sudo dnf install libevdev-devel libudev-devel
+cmake .
+sudo make install
+sudo systemctl enable --now joycond
+```
 
 # Usage
 When a joy-con or pro controller is connected via bluetooth or USB, the player LEDs should start blinking periodically. This signals that the controller is in pairing mode.
