@@ -28,12 +28,15 @@ add_subdirectory(src)
 install(TARGETS joycond DESTINATION /usr/bin/
         PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         )
-install(FILES udev/89-joycond.rules udev/72-joycond.rules DESTINATION /usr/lib/udev/rules.d/
+execute_process(COMMAND pkg-config --variable=udevdir udev OUTPUT_VARIABLE UDEV_RULES_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+install(FILES udev/89-joycond.rules udev/72-joycond.rules DESTINATION ${UDEV_RULES_PATH}/rules.d/
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ 
         )
-install(FILES systemd/joycond.service DESTINATION /usr/lib/systemd/system
+execute_process(COMMAND systemd-path systemd-system-unit OUTPUT_VARIABLE SYSTEMD_SYSTEM_UNIT_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+install(FILES systemd/joycond.service DESTINATION ${SYSTEMD_SYSTEM_UNIT_PATH}
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         )
-install(FILES systemd/joycond.conf DESTINATION /usr/lib/modules-load.d
+execute_process(COMMAND systemd-path modules-load OUTPUT_VARIABLE SYSTEMD_MODULES_LOAD_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+install(FILES systemd/joycond.conf DESTINATION ${SYSTEMD_MODULES_LOAD_PATH}
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         )
