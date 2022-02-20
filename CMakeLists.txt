@@ -28,12 +28,12 @@ add_subdirectory(src)
 install(TARGETS joycond DESTINATION /usr/bin/
         PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         )
-install(FILES udev/89-joycond.rules udev/72-joycond.rules DESTINATION /lib/udev/rules.d/
+install(FILES udev/89-joycond.rules udev/72-joycond.rules DESTINATION /usr/lib/udev/rules.d/
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ 
         )
 install(FILES systemd/joycond.service DESTINATION /usr/lib/systemd/system
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         )
-install(FILES systemd/joycond.conf DESTINATION /etc/modules-load.d
+install(FILES systemd/joycond.conf DESTINATION /usr/lib/modules-load.d
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         )
