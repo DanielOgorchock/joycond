@@ -29,10 +29,7 @@ install(TARGETS joycond DESTINATION /usr/bin/
         PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         )
 
-execute_process(COMMAND pkg-config --variable=udevdir udev OUTPUT_VARIABLE UDEV_RULES_PATH OUTPUT_STRIP_TRAILING_WHITESPACE RESULT_VARIABLE UDEV_RETVAL)
-if(NOT "${UDEV_RETVAL}" EQUAL 0)
-    set(UDEV_RULES_PATH "/usr/lib/udev/rules.d")
-endif()
+pkg_get_variable(UDEV_RULES_PATH udev udevdir)
 install(FILES udev/89-joycond.rules udev/72-joycond.rules DESTINATION ${UDEV_RULES_PATH}/rules.d/
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ 
         )
