@@ -9,6 +9,11 @@ hid-nintendo is currently in review on the linux-input mailing list. The most re
 4. `sudo make install`
 5. `sudo systemctl enable --now joycond`
 
+# Uninstallation
+
+1. `sudo systemctl disable --now joycond`
+2. `sudo make uninstall`
+
 # Usage
 When a joy-con or pro controller is connected via bluetooth or USB, the player LEDs should start blinking periodically. This signals that the controller is in pairing mode.
 
