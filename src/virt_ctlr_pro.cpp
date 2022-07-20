@@ -74,13 +74,18 @@ void virt_ctlr_pro::handle_uinput_event()
                         {
                             struct uinput_ff_upload upload = { 0 };
                             struct ff_effect effect = { 0 };
+                            bool allocate_new_effect;
 
                             upload.request_id = ev.value;
                             if (ioctl(get_uinput_fd(), UI_BEGIN_FF_UPLOAD, &upload))
                                 std::cerr << "Failed to get uinput_ff_upload: " << strerror(errno) << std::endl;
 
                             effect = upload.effect;
-                            effect.id = -1;
+                            /* Check if already allocated or it needs an update */
+                            allocate_new_effect = !rumble_effects.count(effect.id);
+                            if (allocate_new_effect)
+                                effect.id = -1;
+
                             /* upload the effect to the real device */
                             upload.retval = 0;
                             if (ioctl(phys->get_fd(), EVIOCSFF, &effect) == -1)
@@ -91,9 +96,8 @@ void virt_ctlr_pro::handle_uinput_event()
                             if (upload.retval)
                                 std::cerr << "UI_FF_UPLOAD failed: " << strerror(upload.retval) << std::endl;
 
-                            if (rumble_effects.count(effect.id))
-                                std::cerr << "WARNING: ff_effect already in map\n";
-                            rumble_effects[effect.id] = effect;
+                            if (allocate_new_effect)
+                                rumble_effects[effect.id] = effect;
 
                             if (ioctl(get_uinput_fd(), UI_END_FF_UPLOAD, &upload))
                                 std::cerr << "Failed to end uinput_ff_upload: " << strerror(errno) << std::endl;

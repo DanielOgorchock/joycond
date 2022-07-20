@@ -122,13 +122,18 @@ void virt_ctlr_combined::handle_uinput_event()
                             struct ff_effect effect = { 0 };
                             struct ff_effect effect_l = { 0 };
                             struct ff_effect effect_r = { 0 };
+                            bool allocate_new_effect;
 
                             upload.request_id = ev.value;
                             if (ioctl(get_uinput_fd(), UI_BEGIN_FF_UPLOAD, &upload))
                                 std::cerr << "Failed to get uinput_ff_upload: " << strerror(errno) << std::endl;
 
                             effect = upload.effect;
-                            effect.id = -1;
+                            /* Check if already allocated or it needs an update */
+                            allocate_new_effect = !rumble_effects.count(effect.id);
+                            if (allocate_new_effect)
+                                effect.id = -1;
+
                             /* upload the effect to both devices */
                             upload.retval = 0;
                             if (physl) {
@@ -140,7 +145,9 @@ void virt_ctlr_combined::handle_uinput_event()
                             if (physr) {
                                 /* reset effect */
                                 effect = upload.effect;
-                                effect.id = -1;
+                                /* Check if already allocated or it needs an update */
+                                if (allocate_new_effect)
+                                    effect.id = -1;
                                 if (ioctl(physr->get_fd(), EVIOCSFF, &effect) == -1)
                                     upload.retval = errno;
                                 effect_r = effect;
@@ -151,9 +158,8 @@ void virt_ctlr_combined::handle_uinput_event()
                             if (upload.retval)
                                 std::cerr << "UI_FF_UPLOAD failed: " << strerror(upload.retval) << std::endl;
 
-                            if (rumble_effects.count(effect.id))
-                                std::cerr << "WARNING: ff_effect already in map\n";
-                            rumble_effects[effect.id] = std::make_pair(effect_l, effect_r);
+                            if (allocate_new_effect)
+                                rumble_effects[effect.id] = std::make_pair(effect_l, effect_r);
 
                             if (ioctl(get_uinput_fd(), UI_END_FF_UPLOAD, &upload))
                                 std::cerr << "Failed to end uinput_ff_upload: " << strerror(errno) << std::endl;
