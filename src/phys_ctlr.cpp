@@ -1,4 +1,6 @@
 #include "phys_ctlr.h"
+#include "config.h"
+#include "moonlight/maps.h"
 
 #include <fcntl.h>
 #include <iostream>
@@ -9,7 +11,32 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-//private
+// public static
+const std::map<std::string, phys_ctlr::Model>& phys_ctlr::models_by_name() {
+    static const std::map<std::string, phys_ctlr::Model> mapping = {
+        {"Procon", Model::Procon},
+        {"Snescon", Model::Snescon},
+        {"Left_Joycon", Model::Left_Joycon},
+        {"Right_Joycon", Model::Right_Joycon},
+        {"Unknown", Model::Unknown},
+    };
+    return mapping;
+}
+
+// public static
+const std::map<phys_ctlr::Model, std::string>& phys_ctlr::names_by_model() {
+    static const std::map<phys_ctlr::Model, std::string> mapping = []() {
+        std::map<phys_ctlr::Model, std::string> mapping;
+        for (auto iter = models_by_name().begin(); iter != models_by_name().end(); iter++) {
+            mapping.insert({iter->second, iter->first});
+        }
+        return mapping;
+    }();
+
+    return mapping;
+}
+
+// private
 std::optional<std::string> phys_ctlr::get_first_glob_path(std::string const &pattern)
 {
     glob_t globbuf;
@@ -224,7 +251,18 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
     is_serial(false)
 {
 
+    const Config& config = Config::get();
     zero_triggers();
+
+    // Attempt to read MAC address from uniq attribute
+    mac_addr = "";
+#if defined(ANDROID) || defined(__ANDROID__)
+    std::ifstream funiq("/sys/" + devpath + "/uniq");
+#else
+     std::ifstream funiq("/sys/" + devpath + "/../uniq");
+#endif
+    std::getline(funiq, mac_addr);
+    std::cout << "MAC: " << mac_addr << std::endl;
 
     int fd = open(devname.c_str(), O_RDWR | O_NONBLOCK);
     if (fd < 0) {
@@ -246,27 +284,35 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
             product_id = 0x2007;
     }
 
-    switch (product_id) {
-        case 0x2009:
-            model = Model::Procon;
-            std::cout << "Found Pro Controller\n";
-            break;
-        case 0x2006:
-            model = Model::Left_Joycon;
-            std::cout << "Found Left Joy-Con\n";
-            break;
-        case 0x2007:
-            model = Model::Right_Joycon;
-            std::cout << "Found Right Joy-Con\n";
-            break;
-        case 0x2017:
-            model = Model::Snescon;
-            std::cout << "Found SNES Controller\n";
-            break;
-        default:
-            model = Model::Unknown;
-            std::cerr << "Unknown product id = " << std::hex << libevdev_get_id_product(evdev) << std::endl;
-            break;
+    auto device_override = config.get_mac_device_override(mac_addr);
+
+    if (device_override) {
+        model = *device_override;
+        std::cout << "Device type override for mac_addr " << mac_addr << " activated: " << phys_ctlr::names_by_model().at(model) << std::endl;
+
+    } else {
+        switch (product_id) {
+            case 0x2009:
+                model = Model::Procon;
+                std::cout << "Found Pro Controller\n";
+                break;
+            case 0x2006:
+                model = Model::Left_Joycon;
+                std::cout << "Found Left Joy-Con\n";
+                break;
+            case 0x2007:
+                model = Model::Right_Joycon;
+                std::cout << "Found Right Joy-Con\n";
+                break;
+            case 0x2017:
+                model = Model::Snescon;
+                std::cout << "Found SNES Controller\n";
+                break;
+            default:
+                model = Model::Unknown;
+                std::cerr << "Unknown product id = " << std::hex << libevdev_get_id_product(evdev) << std::endl;
+                break;
+        }
     }
 
     init_leds();
@@ -292,15 +338,6 @@ phys_ctlr::phys_ctlr(std::string const &devpath, std::string const &devname) :
         is_serial = true;
     }
 
-    // Attempt to read MAC address from uniq attribute
-    mac_addr = "";
-#if defined(ANDROID) || defined(__ANDROID__)
-    std::ifstream funiq("/sys/" + devpath + "/uniq");
-#else
-     std::ifstream funiq("/sys/" + devpath + "/../uniq");
-#endif
-    std::getline(funiq, mac_addr);
-    std::cout << "MAC: " << mac_addr << std::endl;
 }
 
 phys_ctlr::~phys_ctlr()

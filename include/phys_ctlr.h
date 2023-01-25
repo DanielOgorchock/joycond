@@ -5,12 +5,16 @@
 #include <libevdev/libevdev.h>
 #include <optional>
 #include <string>
+#include <map>
 
 class phys_ctlr
 {
     public:
         enum class Model { Procon, Snescon, Left_Joycon, Right_Joycon, Unknown };
         enum class PairingState { Pairing, Lone, Waiting, Horizontal, Virt_Procon };
+
+        static const std::map<std::string, Model>& models_by_name();
+        static const std::map<Model, std::string>& names_by_model();
 
     private:
         std::string devpath;

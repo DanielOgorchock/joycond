@@ -261,7 +261,7 @@ virt_ctlr_pro::virt_ctlr_pro(std::shared_ptr<phys_ctlr> phys, epoll_mgr& epoll_m
     fcntl(get_uinput_fd(), F_SETFL, flags | O_NONBLOCK);
 
     subscriber = std::make_shared<epoll_subscriber>(std::vector({get_uinput_fd()}),
-                                                    [=](int event_fd){handle_events(event_fd);});
+                                                    [=, this](int event_fd){handle_events(event_fd);});
     epoll_manager.add_subscriber(subscriber);
 }
 
