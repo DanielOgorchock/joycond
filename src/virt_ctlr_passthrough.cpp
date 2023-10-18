@@ -14,6 +14,11 @@ virt_ctlr_passthrough::virt_ctlr_passthrough(std::shared_ptr<phys_ctlr> phys) :
     // Allow other processes to use the input now.
     if (fchmod(phys->get_fd(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH))
         std::cerr << "Failed to change evdev permissions; " << strerror(errno) << std::endl;
+    // Inform other processes the input is usable now.
+    std::ofstream uevent;
+    uevent.open("/sys" + phys->get_devpath() + "/uevent");
+    uevent << "change";
+    uevent.close();
     phys->ungrab();
 }
 
