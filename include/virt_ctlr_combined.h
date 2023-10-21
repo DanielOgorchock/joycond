@@ -4,6 +4,7 @@
 #include "virt_ctlr.h"
 #include "phys_ctlr.h"
 #include "epoll_mgr.h"
+#include "config.h"
 
 #include <libevdev/libevdev.h>
 #include <map>
@@ -22,6 +23,7 @@ class virt_ctlr_combined : public virt_ctlr
         std::map<int, std::pair<struct ff_effect, struct ff_effect>> rumble_effects;
         std::string left_mac;
         std::string right_mac;
+        ControllerProps props;
 
         void relay_events(std::shared_ptr<phys_ctlr> phys);
         void handle_uinput_event();

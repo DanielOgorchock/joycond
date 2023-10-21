@@ -49,7 +49,7 @@ ctlr_detector_udev::ctlr_detector_udev(ctlr_mgr& ctlr_manager, epoll_mgr& epoll_
     udev_mon_fd = udev_monitor_get_fd(mon);
 
     subscriber = std::make_shared<epoll_subscriber>(std::vector({udev_mon_fd}),
-                                                    [=](int event_fd){epoll_event_callback(event_fd);});
+                                                    [=, this](int event_fd){epoll_event_callback(event_fd);});
     epoll_manager.add_subscriber(subscriber);
 
     // Detect any existing controllers prior to daemon start
@@ -83,4 +83,3 @@ ctlr_detector_udev::~ctlr_detector_udev()
 {
     epoll_manager.remove_subscriber(subscriber);
 }
-

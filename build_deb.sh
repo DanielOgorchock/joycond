@@ -9,6 +9,7 @@ architecture="arm64"
 install_root="$(pwd)/build/deb/joycond"
 package_version="0.4-0"
 
+git submodule update --init --recursive
 mkdir -p "$install_root" || exit
 cmake . || exit
 make DESTDIR="$install_root" install || exit

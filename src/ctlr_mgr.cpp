@@ -168,7 +168,7 @@ void ctlr_mgr::add_ctlr(const std::string& devpath, const std::string& devname)
         unpaired_controllers[devpath] = phys;
         phys->blink_player_leds();
         subscribers[devpath] = std::make_shared<epoll_subscriber>(std::vector({phys->get_fd()}),
-                                                [=](int event_fd){epoll_event_callback(event_fd);});
+                                                [=, this](int event_fd){epoll_event_callback(event_fd);});
         epoll_manager.add_subscriber(subscribers[devpath]);
     } else {
         std::cerr << "Attempting to add existing phys_ctlr to controller manager\n";

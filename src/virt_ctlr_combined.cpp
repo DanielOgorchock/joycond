@@ -1,4 +1,5 @@
 #include "virt_ctlr_combined.h"
+#include "config.h"
 
 #include <cstring>
 #include <fcntl.h>
@@ -76,7 +77,34 @@ void virt_ctlr_combined::relay_events(std::shared_ptr<phys_ctlr> phys)
                 }
             }
 #endif
-            libevdev_uinput_write_event(uidev, ev.type, ev.code, ev.value);
+
+            // Swap X/Y and A/B if xbox_orientation is enabled for this controller.
+            if (props.xbox_orientation) {
+                switch (ev.code) {
+                    case BTN_X:
+                        libevdev_uinput_write_event(uidev, ev.type, BTN_Y, ev.value);
+                        break;
+
+                    case BTN_Y:
+                        libevdev_uinput_write_event(uidev, ev.type, BTN_X, ev.value);
+                        break;
+
+                    case BTN_A:
+                        libevdev_uinput_write_event(uidev, ev.type, BTN_B, ev.value);
+                        break;
+
+                    case BTN_B:
+                        libevdev_uinput_write_event(uidev, ev.type, BTN_A, ev.value);
+                        break;
+
+                    default:
+                        libevdev_uinput_write_event(uidev, ev.type, ev.code, ev.value);
+                        break;
+                }
+
+            } else {
+                libevdev_uinput_write_event(uidev, ev.type, ev.code, ev.value);
+            }
         }
         ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
     }
@@ -235,6 +263,9 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
 {
     int ret;
 
+    const Config& config = Config::get();
+    props = config.get_combined_joycons_props({left_mac, right_mac});
+
     uifd = open("/dev/uinput", O_RDWR);
     if (uifd < 0) {
         std::cerr << "Failed to open uinput; errno=" << errno << std::endl;
@@ -341,7 +372,7 @@ virt_ctlr_combined::virt_ctlr_combined(std::shared_ptr<phys_ctlr> physl, std::sh
     fcntl(get_uinput_fd(), F_SETFL, flags | O_NONBLOCK);
 
     subscriber = std::make_shared<epoll_subscriber>(std::vector({get_uinput_fd()}),
-                                                    [=](int event_fd){handle_events(event_fd);});
+                                                    [=, this](int event_fd){handle_events(event_fd);});
     epoll_manager.add_subscriber(subscriber);
 }
 

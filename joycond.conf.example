@@ -1,0 +1,3 @@
+mac_device 98:B6:E9:F8:6F:86 Left_Joycon
+mac_device 98:B6:E9:33:EF:5C Right_Joycon
+prop combined_joycons 98:B6:E9:F8:6F:86 98:B6:E9:33:EF:5C xbox_orientation 1
