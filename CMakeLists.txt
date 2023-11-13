@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.13)
 project(joycond)
 
+# default CMAKE INSTALL PREFIX so install can use relative paths
+if(NOT CMAKE_INSTALL_PREFIX)
+	set(CMAKE_INSTALL_PREFIX /)
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 
 # Generate compile_commands.json
@@ -25,15 +30,15 @@ target_link_libraries(
 
 add_subdirectory(src)
 
-install(TARGETS joycond DESTINATION /usr/bin/
+install(TARGETS joycond DESTINATION usr/bin/
         PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         )
-install(FILES udev/89-joycond.rules udev/72-joycond.rules DESTINATION /lib/udev/rules.d/
+install(FILES udev/89-joycond.rules udev/72-joycond.rules DESTINATION lib/udev/rules.d/
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ 
         )
-install(FILES systemd/joycond.service DESTINATION /etc/systemd/system
+install(FILES systemd/joycond.service DESTINATION etc/systemd/system
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         )
-install(FILES systemd/joycond.conf DESTINATION /etc/modules-load.d
+install(FILES systemd/joycond.conf DESTINATION etc/modules-load.d
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
         )
