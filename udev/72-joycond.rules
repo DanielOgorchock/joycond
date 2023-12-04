@@ -13,5 +13,6 @@ ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2006", ATTRS{name}!="*Combined*", 
 ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2007", ATTRS{name}!="*Combined*", ATTRS{name}!="*Virtual*", ATTRS{name}!="*IMU*", TAG-="uaccess"
 ATTRS{id/vendor}=="057e", ATTRS{id/product}=="200e", ATTRS{name}!="*Combined*", ATTRS{name}!="*Virtual*", ATTRS{name}!="*IMU*", TAG-="uaccess"
 ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2017", ATTRS{name}!="*Combined*", ATTRS{name}!="*Virtual*", ATTRS{name}!="*IMU*", TAG-="uaccess"
+ATTRS{id/vendor}=="057e", ATTRS{id/product}=="2019", ATTRS{name}!="*Combined*", ATTRS{name}!="*Virtual*", ATTRS{name}!="*IMU*", TAG-="uaccess"
 
 LABEL="joycond_end"
