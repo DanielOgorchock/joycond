@@ -4,7 +4,7 @@ hid-nintendo is currently in review on the linux-input mailing list. The most re
 
 # Installation
 1. clone the repo
-2. Install requirements (`sudo apt install libevdev-dev` or `sudo dnf install libevdev-devel libudev-devel`)
+2. Install requirements (`sudo apt install libevdev-dev libudev-dev` or `sudo dnf install libevdev-devel libudev-devel`)
 3. `cmake .`
 4. `sudo make install`
 5. `sudo systemctl enable --now joycond`
