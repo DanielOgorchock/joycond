@@ -4,12 +4,27 @@ After=network.target
 
 [Service]
 ExecStart=/usr/bin/joycond
-WorkingDirectory=/root
-StandardOutput=inherit
-StandardError=inherit
 Restart=always
-User=root
+
+DeviceAllow=char-input
+DeviceAllow=/dev/uinput
+DevicePolicy=closed
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+ProtectClock=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectProc=noaccess
+ProtectSystem=strict
+RestrictAddressFamilies=AF_NETLINK
+RestrictNetworkInterfaces=
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SocketBindDeny=any
 
 [Install]
 WantedBy=multi-user.target
-
