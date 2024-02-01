@@ -5,7 +5,7 @@
 # NOTE: This only works for building an arm64 .deb as is. Change
 #       the Architecture below if desired.
 
-architecture="arm64"
+architecture="amd64"
 install_root="$(pwd)/build/deb/joycond"
 package_version="0.4-0"
 

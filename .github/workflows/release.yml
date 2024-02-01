@@ -1,0 +1,28 @@
+name: Create the DEB
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  Create_Packages:
+    name: Create Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+
+      - name: Build the package
+        run: |
+          sudo apt install libevdev-dev libudev-dev
+          ./build_deb.sh
+          mv build/deb/joycond.deb joycond_0.4-0_amd64.deb
+
+      - name: Release the Package
+        uses: softprops/action-gh-release@v1
+        with:
+          files: joycond_0.4-0_amd64.deb
