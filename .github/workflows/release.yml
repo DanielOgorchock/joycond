@@ -18,11 +18,11 @@ jobs:
 
       - name: Build the package
         run: |
-          sudo apt install libevdev-dev libudev-dev
-          ./build_deb.sh
-          mv build/deb/joycond.deb joycond_0.4-0_amd64.deb
+          sudo apt install debmake debhelper
+          debmake -p joycond -t
+          debuild -us -uc
 
       - name: Release the Package
         uses: softprops/action-gh-release@v1
         with:
-          files: joycond_0.4-0_amd64.deb
+          files: ../joycond*.deb

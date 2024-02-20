@@ -1,0 +1,6 @@
+joycond (0.4-1) jammy; urgency=low
+
+  * Initial release. Closes: #nnnn
+    <nnnn is the bug number of your ITP>
+
+ -- Faris Redza <faris.redza1999@gmail.com>  Tue, 20 Feb 2024 23:12:31 +0000

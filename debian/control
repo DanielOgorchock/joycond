@@ -1,0 +1,12 @@
+Source: joycond
+Section: admin
+Priority: optional
+Maintainer: Faris Redza <faris.redza1999@gmail.com>
+Build-Depends: cmake, debhelper-compat (= 12)
+Standards-Version: 4.5.0
+Homepage: https://github.com/DanielOgorchock/joycond
+
+Package: joycond
+Architecture: all
+Depends: libevdev2, libudev1, ${misc:Depends}, ${shlibs:Depends}
+Description: Pairs joy-cons together into a virtual controller
