@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: joycond
 Upstream-Contact: Daniel J. Ogorchock <djogorchock@gmail.com>
-https://github.com/DanielOgorchock/joycond
+Source: https://github.com/DanielOgorchock/joycond
 #
 # Please double check copyright with the licensecheck(1) command.
 
