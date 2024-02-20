@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "Enabling and starting joycond service..."
+systemctl enable --now joycond
