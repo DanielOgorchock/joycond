@@ -18,7 +18,7 @@ jobs:
 
       - name: Build the package
         run: |
-          sudo apt install debmake debhelper libevdev-dev libudev-dev
+          sudo apt install debmake debhelper cmake libevdev-dev libudev-dev
           debmake -p joycond -t
           debuild -us -uc
 
