@@ -2,7 +2,11 @@ Source: joycond
 Section: admin
 Priority: optional
 Maintainer: Faris Redza <faris.redza1999@gmail.com>
-Build-Depends: cmake, debhelper-compat (= 12)
+Build-Depends: cmake,
+               debhelper-compat (= 12),
+               libevdev-dev,
+               libudev-dev,
+               pkg-config
 Standards-Version: 4.5.0
 Homepage: https://github.com/DanielOgorchock/joycond
 
