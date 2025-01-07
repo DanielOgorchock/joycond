@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+  <id>com.github.DanielOgorchock.joycond</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <name>joycond</name>
+  <summary>System service to use Nintendo joy-cons as joypads</summary>
+  <url type="homepage">https://github.com/DanielOgorchock/joycond</url>
+  <description>
+    <p>
+      joycond is a linux daemon which uses the evdev devices provided by
+      hid-nintendo (formerly known as hid-joycon) to implement joycon pairing as
+      default joystick devices.
+
+      It allows to use the Nintendo Switch Joy-Cons controllers as combined device
+      or as separated joysticks.
+
+      It also supports pairing the Nintnendo Switch Pro, N64 and SNES Controllers.
+    </p>
+  </description>
+  <provides>
+    <modalias>usb:v057ep2006</modalias>
+    <modalias>usb:v057ep2007</modalias>
+    <modalias>usb:v057ep2009</modalias>
+    <modalias>usb:v057ep200e</modalias>
+    <modalias>usb:v057ep2017</modalias>
+    <modalias>usb:v057ep2019</modalias>
+  </provides>
+</component>
