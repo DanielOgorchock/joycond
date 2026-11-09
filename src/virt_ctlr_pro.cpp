@@ -12,6 +12,42 @@
 #include <vector>
 
 //private
+void virt_ctlr_pro::relay_dpad_btn(int code, bool& pressed, bool new_pressed)
+{
+    /* Only write the buttons that actually changed so that moving directly
+       between opposing directions releases the previously held button. */
+    if (pressed == new_pressed)
+        return;
+
+    pressed = new_pressed;
+    libevdev_uinput_write_event(uidev, EV_KEY, code, new_pressed);
+}
+
+/* Returns true if the event was a dpad hat event and has been relayed. */
+bool virt_ctlr_pro::relay_dpad_event(struct input_event const& ev)
+{
+#if defined(ANDROID) || defined(__ANDROID__)
+    /* Android expects a hat, so let it pass through untouched. */
+    return false;
+#else
+    if (ev.type != EV_ABS)
+        return false;
+
+    switch (ev.code) {
+        case ABS_HAT0X:
+            relay_dpad_btn(BTN_DPAD_LEFT, dpad_left, ev.value < 0);
+            relay_dpad_btn(BTN_DPAD_RIGHT, dpad_right, ev.value > 0);
+            return true;
+        case ABS_HAT0Y:
+            relay_dpad_btn(BTN_DPAD_UP, dpad_up, ev.value < 0);
+            relay_dpad_btn(BTN_DPAD_DOWN, dpad_down, ev.value > 0);
+            return true;
+        default:
+            return false;
+    }
+#endif
+}
+
 void virt_ctlr_pro::relay_events(std::shared_ptr<phys_ctlr> phys)
 {
     struct input_event ev;
@@ -22,7 +58,8 @@ void virt_ctlr_pro::relay_events(std::shared_ptr<phys_ctlr> phys)
         if (ret == LIBEVDEV_READ_STATUS_SYNC) {
             std::cout << "handle sync\n";
             while (ret == LIBEVDEV_READ_STATUS_SYNC) {
-                libevdev_uinput_write_event(uidev, ev.type, ev.code, ev.value);
+                if (!relay_dpad_event(ev))
+                    libevdev_uinput_write_event(uidev, ev.type, ev.code, ev.value);
                 ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_SYNC, &ev);
             }
         } else if (ret == LIBEVDEV_READ_STATUS_SUCCESS) {
@@ -38,6 +75,12 @@ void virt_ctlr_pro::relay_events(std::shared_ptr<phys_ctlr> phys)
                 continue;
             }
 #endif
+            /* Translate the dpad hat into the buttons the combined joy-cons use */
+            if (relay_dpad_event(ev)) {
+                ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
+                continue;
+            }
+
             libevdev_uinput_write_event(uidev, ev.type, ev.code, ev.value);
         }
         ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
@@ -162,6 +205,13 @@ virt_ctlr_pro::virt_ctlr_pro(std::shared_ptr<phys_ctlr> phys, epoll_mgr& epoll_m
     uifd(-1),
     rumble_effects(),
     mac(phys->get_mac_addr())
+#if !defined(ANDROID) && !defined(__ANDROID__)
+    ,
+    dpad_up(false),
+    dpad_down(false),
+    dpad_left(false),
+    dpad_right(false)
+#endif
 {
     int ret;
 
@@ -192,6 +242,12 @@ virt_ctlr_pro::virt_ctlr_pro(std::shared_ptr<phys_ctlr> phys, epoll_mgr& epoll_m
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_EAST, NULL);
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_NORTH, NULL);
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_WEST, NULL);
+#if !defined(ANDROID) && !defined(__ANDROID__)
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_DPAD_UP, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_DPAD_DOWN, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_DPAD_LEFT, NULL);
+    libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_DPAD_RIGHT, NULL);
+#endif
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TL, NULL);
     libevdev_enable_event_code(virt_evdev, EV_KEY, BTN_TR, NULL);
 #if !defined(ANDROID) && !defined(__ANDROID__)
@@ -210,7 +266,14 @@ virt_ctlr_pro::virt_ctlr_pro(std::shared_ptr<phys_ctlr> phys, epoll_mgr& epoll_m
     libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_RX, &absconfig);
     libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_RY, &absconfig);
 
-    // HAT for dpad
+    /*
+     * This device shares its product id with the combined joy-cons, so Steam
+     * applies the combined joy-con mapping to it, which reports the dpad as
+     * buttons rather than a hat. The dpad is advertised as those buttons above
+     * and relay_dpad_event() translates the physical hat to match. Only
+     * android keeps the hat, along with its emulated analog triggers.
+     */
+#if defined(ANDROID) || defined(__ANDROID__)
     struct input_absinfo dpad_absconfig = { 0 };
     dpad_absconfig.minimum = -1;
     dpad_absconfig.maximum = 1;
@@ -219,8 +282,6 @@ virt_ctlr_pro::virt_ctlr_pro(std::shared_ptr<phys_ctlr> phys, epoll_mgr& epoll_m
     libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_HAT0X, &dpad_absconfig);
     libevdev_enable_event_code(virt_evdev, EV_ABS, ABS_HAT0Y, &dpad_absconfig);
 
-    // Emulate analog triggers for android
-#if defined(ANDROID) || defined(__ANDROID__)
     struct input_absinfo absconfig_fake = { 0 };
     absconfig_fake.minimum = 0;
     absconfig_fake.maximum = 1;

@@ -20,8 +20,16 @@ class virt_ctlr_pro : public virt_ctlr
         int uifd;
         std::map<int, struct ff_effect> rumble_effects;
         std::string mac;
+#if !defined(ANDROID) && !defined(__ANDROID__)
+        bool dpad_up;
+        bool dpad_down;
+        bool dpad_left;
+        bool dpad_right;
+#endif
 
         void relay_events(std::shared_ptr<phys_ctlr> phys);
+        void relay_dpad_btn(int code, bool& pressed, bool new_pressed);
+        bool relay_dpad_event(struct input_event const& ev);
         void handle_uinput_event();
     public:
         virt_ctlr_pro(std::shared_ptr<phys_ctlr> phys, epoll_mgr& epoll_manager);
