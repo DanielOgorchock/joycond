@@ -19,6 +19,24 @@ void virt_ctlr_combined::relay_events(std::shared_ptr<phys_ctlr> phys)
     bool is_serial;
 
     int ret = libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
+
+    if (ret == -ENODEV) {
+        if (phys == physl) {
+            libevdev_uinput_write_event(uidev, EV_ABS, ABS_X, 0);
+            libevdev_uinput_write_event(uidev, EV_ABS, ABS_Y, 0);
+            libevdev_uinput_write_event(uidev, EV_KEY, BTN_TL, 0);
+            libevdev_uinput_write_event(uidev, EV_KEY, BTN_TL2, 0);
+        } else if (phys == physr) {
+            libevdev_uinput_write_event(uidev, EV_ABS, ABS_RX, 0);
+            libevdev_uinput_write_event(uidev, EV_ABS, ABS_RY, 0);
+            libevdev_uinput_write_event(uidev, EV_KEY, BTN_TR, 0);
+            libevdev_uinput_write_event(uidev, EV_KEY, BTN_TR2, 0);
+        }
+        libevdev_uinput_write_event(uidev, EV_SYN, SYN_REPORT, 0);
+        return;
+    }
+    // -------------------------------------
+    
     while (ret == LIBEVDEV_READ_STATUS_SYNC || ret == LIBEVDEV_READ_STATUS_SUCCESS) {
         if (ret == LIBEVDEV_READ_STATUS_SYNC) {
             std::cout << "handle sync\n";
@@ -399,11 +417,24 @@ int virt_ctlr_combined::get_uinput_fd()
 
 void virt_ctlr_combined::remove_phys_ctlr(const std::shared_ptr<phys_ctlr> phys)
 {
+    // zeroing out all the buttons upon disconnect
     if (phys == physl) {
         std::cout << "Removing left joy-con from virtual combined controller\n";
+        //std::cout << "\n\nTHE THING DID THE THING!!!!!!!!!!\n";
+        libevdev_uinput_write_event(uidev, EV_ABS, ABS_X, 0);
+        libevdev_uinput_write_event(uidev, EV_ABS, ABS_Y, 0);
+        libevdev_uinput_write_event(uidev, EV_KEY, BTN_TL, 0);
+        libevdev_uinput_write_event(uidev, EV_KEY, BTN_TL2, 0);
+        libevdev_uinput_write_event(uidev, EV_SYN, SYN_REPORT, 0);
         physl = nullptr;
     } else if (phys == physr) {
         std::cout << "Removing right joy-con from virtual combined controller\n";
+        
+        libevdev_uinput_write_event(uidev, EV_ABS, ABS_RX, 0);
+        libevdev_uinput_write_event(uidev, EV_ABS, ABS_RY, 0);
+        libevdev_uinput_write_event(uidev, EV_KEY, BTN_TR, 0);
+        libevdev_uinput_write_event(uidev, EV_KEY, BTN_TR2, 0);
+        libevdev_uinput_write_event(uidev, EV_SYN, SYN_REPORT, 0);        
         physr = nullptr;
     } else {
         std::cerr << "ERROR: Attempted to remove non-existant controller from combined joy-cons\n";
